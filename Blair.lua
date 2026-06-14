@@ -54,14 +54,6 @@ local Success, Result = pcall(function()
 	print("[DEBUG] Found RStorage.ActiveChallenges");
 	repeat task.wait(.1) until RStorage:FindFirstChild("Remotes");
 	print("[DEBUG] Found RStorage.Remotes");
-	repeat task.wait(.1) until RStorage:FindFirstChild("EnvironmentLoaded");
-	print("[DEBUG] Found RStorage.EnvironmentLoaded");
-	repeat task.wait(.1) until RStorage["EnvironmentLoaded"].Value;
-	print("[DEBUG] EnvironmentLoaded.Value is true");
-	repeat task.wait(.1) until RStorage:FindFirstChild("LoadingFinished");
-	print("[DEBUG] Found RStorage.LoadingFinished");
-	repeat task.wait(.1) until RStorage["LoadingFinished"].Value;
-	print("[DEBUG] LoadingFinished.Value is true");
 	task.wait(5);
 	print("[DEBUG] All checks passed, proceeding to load modules...");
 
