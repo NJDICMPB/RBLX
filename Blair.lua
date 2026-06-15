@@ -1586,6 +1586,8 @@ end)()
 	local RoomDoor = Room.AddInfo("Door Interact"); RoomDoor.Visible = false;
 	local RoomManifest = Room.AddInfo("Manifest"); RoomManifest.Visible = false;
 	local RoomThread = Utility:Thread("Room", function()
+		local RoomHighlightESP = nil;
+		local CurrentHighlightedRoom = nil;
 		while task.wait() do
 			local LowestTempRoom = nil;
 			for _, v in pairs(game.Workspace["Map"]["Zones"]:GetChildren()) do
@@ -1601,6 +1603,14 @@ end)()
 				RoomName.Text = LowestTempRoom.Name;
 				RoomTemp.Text = (math.floor(LowestTempRoom["_____Temperature"].Value * 1000) / 1000)
 				LowestTemp = LowestTempRoom
+
+				-- Highlight the room with the lowest temperature (likely ghost room)
+				if CurrentHighlightedRoom ~= LowestTempRoom then
+					if RoomHighlightESP then RoomHighlightESP.Destroy(); end
+					RoomHighlightESP = CreateESP("Highlight", { Parent = LowestTempRoom; Color = Color3.fromRGB(0, 170, 255); FillTransparency = 0.6; });
+					RoomHighlightESP.Enable();
+					CurrentHighlightedRoom = LowestTempRoom;
+				end
 			end
 			local FoundWater = false;
 			for _, waters in pairs(game.Workspace["Map"]["Water"]:GetChildren()) do
