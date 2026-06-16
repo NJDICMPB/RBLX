@@ -1604,18 +1604,17 @@ end)()
 				RoomTemp.Text = (math.floor(LowestTempRoom["_____Temperature"].Value * 1000) / 1000)
 				LowestTemp = LowestTempRoom
 
-				-- Highlight the room with the lowest temperature (likely ghost room)
+				-- Draw a 3D box outline around the possible ghost room
 				if CurrentHighlightedRoom ~= LowestTempRoom then
 					if RoomHighlightESP then pcall(function() RoomHighlightESP:Destroy() end) end
-					RoomHighlightESP = Utility:Instance("Highlight", {
-						Name = "RoomESP_Highlight";
+					RoomHighlightESP = Utility:Instance("SelectionBox", {
+						Name = "RoomESP_Box";
 						Parent = game:GetService("CoreGui");
 						Adornee = LowestTempRoom;
-						FillColor = Color3.fromRGB(0, 170, 255);
-						OutlineColor = Color3.fromRGB(0, 170, 255);
-						FillTransparency = 0.6;
-						OutlineTransparency = 0;
-						Enabled = true;
+						Color3 = Color3.fromRGB(0, 170, 255);
+						LineThickness = 0.08;
+						SurfaceTransparency = 0.85;
+						SurfaceColor3 = Color3.fromRGB(0, 170, 255);
 					});
 					CurrentHighlightedRoom = LowestTempRoom;
 				end
