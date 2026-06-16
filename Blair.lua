@@ -1586,8 +1586,6 @@ end)()
 	local RoomDoor = Room.AddInfo("Door Interact"); RoomDoor.Visible = false;
 	local RoomManifest = Room.AddInfo("Manifest"); RoomManifest.Visible = false;
 	local RoomThread = Utility:Thread("Room", function()
-		local RoomHighlightESP = nil;
-		local CurrentHighlightedRoom = nil;
 		while task.wait() do
 			local LowestTempRoom = nil;
 			for _, v in pairs(game.Workspace["Map"]["Zones"]:GetChildren()) do
@@ -1603,21 +1601,6 @@ end)()
 				RoomName.Text = LowestTempRoom.Name;
 				RoomTemp.Text = (math.floor(LowestTempRoom["_____Temperature"].Value * 1000) / 1000)
 				LowestTemp = LowestTempRoom
-
-				-- Draw a 3D box outline around the possible ghost room
-				if CurrentHighlightedRoom ~= LowestTempRoom then
-					if RoomHighlightESP then pcall(function() RoomHighlightESP:Destroy() end) end
-					RoomHighlightESP = Utility:Instance("SelectionBox", {
-						Name = "RoomESP_Box";
-						Parent = game:GetService("CoreGui");
-						Adornee = LowestTempRoom;
-						Color3 = Color3.fromRGB(0, 170, 255);
-						LineThickness = 0.08;
-						SurfaceTransparency = 0.85;
-						SurfaceColor3 = Color3.fromRGB(0, 170, 255);
-					});
-					CurrentHighlightedRoom = LowestTempRoom;
-				end
 			end
 			local FoundWater = false;
 			for _, waters in pairs(game.Workspace["Map"]["Water"]:GetChildren()) do
