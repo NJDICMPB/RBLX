@@ -1606,9 +1606,17 @@ end)()
 
 				-- Highlight the room with the lowest temperature (likely ghost room)
 				if CurrentHighlightedRoom ~= LowestTempRoom then
-					if RoomHighlightESP then RoomHighlightESP.Destroy(); end
-					RoomHighlightESP = CreateESP("Highlight", { Parent = LowestTempRoom; Color = Color3.fromRGB(0, 170, 255); FillTransparency = 0.6; });
-					RoomHighlightESP.Enable();
+					if RoomHighlightESP then pcall(function() RoomHighlightESP:Destroy() end) end
+					RoomHighlightESP = Utility:Instance("Highlight", {
+						Name = "RoomESP_Highlight";
+						Parent = game:GetService("CoreGui");
+						Adornee = LowestTempRoom;
+						FillColor = Color3.fromRGB(0, 170, 255);
+						OutlineColor = Color3.fromRGB(0, 170, 255);
+						FillTransparency = 0.6;
+						OutlineTransparency = 0;
+						Enabled = true;
+					});
 					CurrentHighlightedRoom = LowestTempRoom;
 				end
 			end
