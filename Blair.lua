@@ -1589,9 +1589,13 @@ end)()
 				LowestTempRoom = v;
 			end
 			if LowestTempRoom and LowestTempRoom["_____Temperature"] then
-				local temp = math.floor(LowestTempRoom["_____Temperature"].Value * 100) / 100;
+				local tempRaw = LowestTempRoom["_____Temperature"].Value;
+				local tempInt = math.floor(tempRaw * 100);
+				local tempWhole = math.floor(tempInt / 100);
+				local tempDec = math.abs(tempInt) % 100;
+				local tempStr = tostring(tempWhole) .. "." .. (tempDec < 10 and "0" .. tostring(tempDec) or tostring(tempDec));
 				RoomName.Text = LowestTempRoom.Name;
-				RoomTemp.Text = string.format("%.2f", temp) .. "°C";
+				RoomTemp.Text = tempStr .. "°C";
 				LowestTemp = LowestTempRoom;
 
 				if CurrentHighlightedRoom ~= LowestTempRoom then
@@ -1614,22 +1618,31 @@ end)()
 					RoomESP.Enable();
 					-- Beam line from player to ghost room
 					pcall(function()
+						local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart");
+						if not hrp then return; end
+						-- Clean up old
+						for _, v in pairs(game.Workspace.Terrain:GetChildren()) do
+							if v.Name == "RoomESP_Att1" or v.Name == "RoomESP_Beam" then v:Destroy(); end
+						end
+						if hrp:FindFirstChild("RoomESP_Att0") then hrp:FindFirstChild("RoomESP_Att0"):Destroy(); end
+						-- Create new
 						local att0 = Instance.new("Attachment");
 						att0.Name = "RoomESP_Att0";
-						att0.Parent = LocalPlayer.Character.HumanoidRootPart;
+						att0.Parent = hrp;
 						local att1 = Instance.new("Attachment");
 						att1.Name = "RoomESP_Att1";
-						att1.Position = LowestTempRoom.Position;
+						att1.WorldPosition = LowestTempRoom.Position;
 						att1.Parent = game.Workspace.Terrain;
 						local beam = Instance.new("Beam");
 						beam.Name = "RoomESP_Beam";
 						beam.Attachment0 = att0;
 						beam.Attachment1 = att1;
 						beam.Color = ColorSequence.new(Color3.fromRGB(0, 170, 255));
-						beam.Width0 = 0.05;
-						beam.Width1 = 0.05;
+						beam.Width0 = 0.1;
+						beam.Width1 = 0.1;
 						beam.FaceCamera = true;
-						beam.Transparency = NumberSequence.new(0.3);
+						beam.LightEmission = 1;
+						beam.Transparency = NumberSequence.new(0.2);
 						beam.Parent = game.Workspace.Terrain;
 					end)
 					CurrentHighlightedRoom = LowestTempRoom;
