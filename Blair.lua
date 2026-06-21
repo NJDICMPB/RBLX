@@ -1589,9 +1589,9 @@ end)()
 				LowestTempRoom = v;
 			end
 			if LowestTempRoom and LowestTempRoom["_____Temperature"] then
-				local temp = math.floor(LowestTempRoom["_____Temperature"].Value * 1000) / 1000;
+				local temp = math.floor(LowestTempRoom["_____Temperature"].Value * 100) / 100;
 				RoomName.Text = LowestTempRoom.Name;
-				RoomTemp.Text = tostring(temp) .. "°C";
+				RoomTemp.Text = string.format("%.2f", temp) .. "°C";
 				LowestTemp = LowestTempRoom;
 
 				if CurrentHighlightedRoom ~= LowestTempRoom then
