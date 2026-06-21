@@ -360,7 +360,6 @@ end)()
 			if PlayerGui.Journal.Background:FindFirstChild("Settings") then
 				Settings = PlayerGui.Journal.Background:FindFirstChild("Settings");
 			else
-				-- Main settings container — sits above journal, dark horror style
 				Settings = Utility:Instance("Frame", {
 					Name = "Settings";
 					Parent = PlayerGui.Journal.Background;
@@ -368,51 +367,36 @@ end)()
 					BackgroundColor3 = Color3.fromRGB(10, 5, 5);
 					BackgroundTransparency = 0.15;
 					BorderSizePixel = 0;
-					Size = UDim2.new(1, 0, 0, 58);
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 10); });
-					Utility:Instance("UIStroke", {
-						Color = Color3.fromRGB(120, 20, 20);
-						Thickness = 1.5;
-					});
+					Size = UDim2.new(1, 0, 0, 38);
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 8); });
+					Utility:Instance("UIStroke", { Color = Color3.fromRGB(120, 20, 20); Thickness = 1.5; });
 					Utility:Instance("UIListLayout", {
-						Padding = UDim.new(0, 6);
+						Padding = UDim.new(0, 4);
 						FillDirection = Enum.FillDirection.Horizontal;
 						HorizontalAlignment = Enum.HorizontalAlignment.Center;
 						VerticalAlignment = Enum.VerticalAlignment.Center;
 					});
-					Utility:Instance("UIPadding", {
-						PaddingLeft = UDim.new(0, 6);
-						PaddingRight = UDim.new(0, 6);
-					});
+					Utility:Instance("UIPadding", { PaddingLeft = UDim.new(0, 4); PaddingRight = UDim.new(0, 4); });
 				});
 			end
 
 			local Data = {Enabled = Enabled}
-			-- Each button: taller, rounded, horror red/dark style
 			Data.Button = Utility:Instance("TextButton", {
 				Name = Name;
 				Parent = Settings;
 				BackgroundColor3 = Color3.fromRGB(25, 10, 10);
 				BackgroundTransparency = 0;
 				BorderSizePixel = 0;
-				Size = UDim2.new(0, 0, 1, -12);
-				AutomaticSize = Enum.AutomaticSize.X;
+				Size = UDim2.new(0.10, 0, 1, -8);
 				Text = "";
-				Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 8); });
-				Utility:Instance("UIStroke", {
-					Color = Color3.fromRGB(80, 15, 15);
-					Thickness = 1;
-				});
-				Utility:Instance("UIPadding", {
-					PaddingLeft = UDim.new(0, 10);
-					PaddingRight = UDim.new(0, 10);
-				});
+				Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
+				Utility:Instance("UIStroke", { Color = Color3.fromRGB(80, 15, 15); Thickness = 1; });
 				Utility:Instance("TextLabel", {
 					Name = "Label";
 					AnchorPoint = Vector2.new(0.5, 0.5);
 					BackgroundTransparency = 1;
-					Position = UDim2.new(0.5, 0, 0.4, 0);
-					Size = UDim2.new(1, -8, 0.5, 0);
+					Position = UDim2.new(0.5, 0, 0.42, 0);
+					Size = UDim2.new(0.92, 0, 0.55, 0);
 					Font = Enum.Font.FredokaOne;
 					Text = Name;
 					TextColor3 = Color3.fromRGB(220, 200, 200);
@@ -420,14 +404,13 @@ end)()
 					TextStrokeTransparency = 0.6;
 					TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
 				});
-				-- Status indicator bar at bottom of button
 				Utility:Instance("Frame", {
 					Name = "Toggle";
 					AnchorPoint = Vector2.new(0.5, 1);
 					BackgroundColor3 = Data.Enabled and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(50, 50, 50);
 					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 1, -3);
-					Size = UDim2.new(0.7, 0, 0, 3);
+					Position = UDim2.new(0.5, 0, 1, -2);
+					Size = UDim2.new(0.65, 0, 0, 2);
 					Utility:Instance("UICorner", { CornerRadius = UDim.new(1, 0); });
 				});
 			});
@@ -440,22 +423,22 @@ end)()
 				local Negative = Options and Options.Negative or false;
 				local Control = Utility:Instance("TextBox", {
 					Parent = Data.Button;
-					AnchorPoint = Vector2.new(0.5, 1);
+					AnchorPoint = Vector2.new(0.5, 0.5);
 					BackgroundColor3 = Color3.fromRGB(15, 5, 5);
 					BackgroundTransparency = 0;
 					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 0, -4);
-					Size = UDim2.new(0.85, 0, 0.42, 0);
+					Position = UDim2.new(0.5, 0, 0.28, 0);
+					Size = UDim2.new(0.85, 0, 0.38, 0);
 					Font = Enum.Font.FredokaOne;
 					TextColor3 = Color3.fromRGB(220, 200, 200);
 					TextScaled = true;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
 					Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 20, 20); Thickness = 1; });
 					Utility:Instance("TextLabel", {
-						AnchorPoint = Vector2.new(0.5, 0);
+						AnchorPoint = Vector2.new(0.5, 1);
 						BackgroundTransparency = 1;
-						Position = UDim2.new(0.5, 0, -0.85, 0);
-						Size = UDim2.new(1, 0, 0.7, 0);
+						Position = UDim2.new(0.5, 0, 0, 0);
+						Size = UDim2.new(1, 0, 0.9, 0);
 						Font = Enum.Font.FredokaOne;
 						Text = Display;
 						TextColor3 = Color3.fromRGB(160, 130, 130);
