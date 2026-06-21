@@ -35,27 +35,16 @@ StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "Loadi
 local Success, Result = pcall(function()
 	print("Loading Blair Script!");
 	repeat task.wait(.1) until game.Workspace:FindFirstChild(LocalPlayer.Name);
-	print("[DEBUG] Found character");
 	repeat task.wait(.1) until game.Workspace[LocalPlayer.Name]:FindFirstChild("HumanoidRootPart");
-	print("[DEBUG] Found HumanoidRootPart");
 	repeat task.wait(.1) until game.Workspace:FindFirstChild("Map");
-	print("[DEBUG] Found Map");
 	repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Van");
-	print("[DEBUG] Found Map.Van");
 	repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Doors");
-	print("[DEBUG] Found Map.Doors");
 	repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Items");
-	print("[DEBUG] Found Map.Items");
 	repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Zones");
-	print("[DEBUG] Found Map.Zones");
 	repeat task.wait(.1) until PlayerGui:FindFirstChild("Journal");
-	print("[DEBUG] Found PlayerGui.Journal");
 	repeat task.wait(.1) until RStorage:FindFirstChild("ActiveChallenges");
-	print("[DEBUG] Found RStorage.ActiveChallenges");
 	repeat task.wait(.1) until RStorage:FindFirstChild("Remotes");
-	print("[DEBUG] Found RStorage.Remotes");
 	task.wait(5);
-	print("[DEBUG] All checks passed, proceeding to load modules...");
 
 	local Utility = (function()
 --// UTILITY MODULE
@@ -1586,6 +1575,8 @@ end)()
 	local RoomDoor = Room.AddInfo("Door Interact"); RoomDoor.Visible = false;
 	local RoomManifest = Room.AddInfo("Manifest"); RoomManifest.Visible = false;
 	local RoomThread = Utility:Thread("Room", function()
+		local RoomESP = nil;
+		local CurrentHighlightedRoom = nil;
 		while task.wait() do
 			local LowestTempRoom = nil;
 			for _, v in pairs(game.Workspace["Map"]["Zones"]:GetChildren()) do
@@ -1598,9 +1589,30 @@ end)()
 				LowestTempRoom = v;
 			end
 			if LowestTempRoom and LowestTempRoom["_____Temperature"] then
-				RoomName.Text = LowestTempRoom.Name;
-				RoomTemp.Text = (math.floor(LowestTempRoom["_____Temperature"].Value * 1000) / 1000)
-				LowestTemp = LowestTempRoom
+				local temp = math.floor(LowestTempRoom["_____Temperature"].Value * 10) / 10;
+				RoomName.Text = "Room: " .. LowestTempRoom.Name;
+				RoomTemp.Text = "Temp: " .. tostring(temp) .. "C";
+				LowestTemp = LowestTempRoom;
+
+				if CurrentHighlightedRoom ~= LowestTempRoom then
+					if RoomESP then RoomESP.Destroy(); end
+					RoomESP = CreateESP("Text", {
+						Text = "[Ghost Room] " .. LowestTempRoom.Name;
+						Parent = LowestTempRoom;
+						Distance = LowestTempRoom;
+						Color = Color3.fromRGB(0, 170, 255);
+						Size = UDim2.new(8, 0, 2, 0);
+						StudsOffset = Vector3.new(0, 5, 0);
+					});
+					RoomESP.Enable();
+					CurrentHighlightedRoom = LowestTempRoom;
+				else
+					if RoomESP and RoomESP.ESP then
+						pcall(function()
+							RoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name .. " (" .. tostring(temp) .. "C)";
+						end)
+					end
+				end
 			end
 			local FoundWater = false;
 			for _, waters in pairs(game.Workspace["Map"]["Water"]:GetChildren()) do
