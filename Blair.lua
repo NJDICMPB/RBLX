@@ -1589,13 +1589,20 @@ end)()
 				LowestTempRoom = v;
 			end
 			if LowestTempRoom and LowestTempRoom["_____Temperature"] then
-				local temp = math.floor(LowestTempRoom["_____Temperature"].Value * 10) / 10;
-				RoomName.Text = "Room: " .. LowestTempRoom.Name;
-				RoomTemp.Text = "Temp: " .. tostring(temp) .. "C";
+				local temp = math.floor(LowestTempRoom["_____Temperature"].Value * 1000) / 1000;
+				RoomName.Text = LowestTempRoom.Name;
+				RoomTemp.Text = tostring(temp) .. "°C";
 				LowestTemp = LowestTempRoom;
 
 				if CurrentHighlightedRoom ~= LowestTempRoom then
 					if RoomESP then RoomESP.Destroy(); end
+					-- Destroy old beam attachments
+					pcall(function()
+						if LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0") then LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0"):Destroy(); end
+						if game.Workspace:FindFirstChild("RoomESP_Att1") then game.Workspace:FindFirstChild("RoomESP_Att1"):Destroy(); end
+						if game.Workspace:FindFirstChild("RoomESP_Beam") then game.Workspace:FindFirstChild("RoomESP_Beam"):Destroy(); end
+					end)
+					-- Floating label ESP
 					RoomESP = CreateESP("Text", {
 						Text = "[Ghost Room] " .. LowestTempRoom.Name;
 						Parent = LowestTempRoom;
@@ -1605,11 +1612,31 @@ end)()
 						StudsOffset = Vector3.new(0, 5, 0);
 					});
 					RoomESP.Enable();
+					-- Beam line from player to ghost room
+					pcall(function()
+						local att0 = Instance.new("Attachment");
+						att0.Name = "RoomESP_Att0";
+						att0.Parent = LocalPlayer.Character.HumanoidRootPart;
+						local att1 = Instance.new("Attachment");
+						att1.Name = "RoomESP_Att1";
+						att1.Position = LowestTempRoom.Position;
+						att1.Parent = game.Workspace.Terrain;
+						local beam = Instance.new("Beam");
+						beam.Name = "RoomESP_Beam";
+						beam.Attachment0 = att0;
+						beam.Attachment1 = att1;
+						beam.Color = ColorSequence.new(Color3.fromRGB(0, 170, 255));
+						beam.Width0 = 0.05;
+						beam.Width1 = 0.05;
+						beam.FaceCamera = true;
+						beam.Transparency = NumberSequence.new(0.3);
+						beam.Parent = game.Workspace.Terrain;
+					end)
 					CurrentHighlightedRoom = LowestTempRoom;
 				else
 					if RoomESP and RoomESP.ESP then
 						pcall(function()
-							RoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name .. " (" .. tostring(temp) .. "C)";
+							RoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name;
 						end)
 					end
 				end
