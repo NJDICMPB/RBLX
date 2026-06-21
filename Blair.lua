@@ -318,22 +318,15 @@ end)()
 	-- [[ CONFIG ]] --
 	------------------
 	local Config = {
-		["CustomLight"] = false;
-		["CustomLightRange"] = "60";
-		["CustomLightBrightness"] = "10";
-		
 		["CustomSprint"] = false;
 		["CustomSprintSpeed"] = "13";
 		
 		["Fullbright"] = false;
-		["FullbrightAmbient"] = "255";
 		
 		["NoClipDoor"] = false;
 		
 		["ESP"] = false;
 		["ESPList"] = {};
-		
-		["Freecam"] = false;
 		
 		["SideStatus"] = false;
 		["SideStatusScale"] = "1";
@@ -387,7 +380,7 @@ end)()
 				BackgroundColor3 = Color3.fromRGB(25, 10, 10);
 				BackgroundTransparency = 0;
 				BorderSizePixel = 0;
-				Size = UDim2.new(0.10, 0, 1, -8);
+				Size = UDim2.new(0.13, 0, 1, -8);
 				Text = "";
 				Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
 				Utility:Instance("UIStroke", { Color = Color3.fromRGB(80, 15, 15); Thickness = 1; });
@@ -415,168 +408,326 @@ end)()
 				});
 			});
 			Data.Toggle = Data.Button["Toggle"];
-			
+
+			-- ========================================================
+			-- AddTextbox: cleaner version with visible label above box
+			-- ========================================================
 			function Data:AddTextbox(Properties, Options)
 				Properties.Text = Options and Config[Options.Config] or Properties.Text or "";
 				local Display = Options and Options.Display or "";
 				local Type = Options and Options.Type or "Text";
 				local Negative = Options and Options.Negative or false;
+
+				-- Wrapper frame to stack label + input
+				local Wrapper = Utility:Instance("Frame", {
+					Parent = Data.Button;
+					BackgroundTransparency = 1;
+					AnchorPoint = Vector2.new(0.5, 0.5);
+					Position = UDim2.new(0.5, 0, 0.5, 0);
+					Size = UDim2.new(0.88, 0, 0.84, 0);
+					Utility:Instance("UIListLayout", {
+						FillDirection = Enum.FillDirection.Vertical;
+						HorizontalAlignment = Enum.HorizontalAlignment.Center;
+						VerticalAlignment = Enum.VerticalAlignment.Center;
+						Padding = UDim.new(0, 1);
+					});
+				});
+
+				-- Small label above
+				Utility:Instance("TextLabel", {
+					Parent = Wrapper;
+					BackgroundTransparency = 1;
+					Size = UDim2.new(1, 0, 0, 11);
+					Font = Enum.Font.FredokaOne;
+					Text = Display;
+					TextColor3 = Color3.fromRGB(160, 120, 120);
+					TextScaled = true;
+					TextXAlignment = Enum.TextXAlignment.Center;
+				});
+
+				-- Input box
 				local Control = Utility:Instance("TextBox", {
+					Parent = Wrapper;
+					BackgroundColor3 = Color3.fromRGB(12, 4, 4);
+					BackgroundTransparency = 0;
+					BorderSizePixel = 0;
+					Size = UDim2.new(1, 0, 0, 16);
+					Font = Enum.Font.FredokaOne;
+					Text = Properties.Text or "";
+					TextColor3 = Color3.fromRGB(230, 210, 210);
+					TextScaled = true;
+					ClearTextOnFocus = false;
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
+					Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 20, 20); Thickness = 1; });
+				});
+
+				for Index, Value in pairs(Properties or {}) do
+					if Index ~= "Text" then
+						pcall(function() Control[Index] = Value; end)
+					end
+				end
+
+				if Type == "Integer" then Control:GetPropertyChangedSignal("Text"):Connect(function() Control.Text = string.match(Control.Text, (Negative and "[-]?" or "").."%d*") or ""; end) end
+				if Type == "Number" then Control:GetPropertyChangedSignal("Text"):Connect(function() Control.Text = string.match(Control.Text, (Negative and "[-]?" or "").."%d*[%.]?%d*") or ""; end) end
+
+				Control.FocusLost:Connect(function()
+					if Options and Options.Config then
+						Config[Options.Config] = Control.Text;
+						Utility:SaveConfig(Config, Directory, File_Name);
+					end
+				end)
+
+				return Control;
+			end;
+
+			-- ========================================================
+			-- AddESPPanel: replaces dropdown with a floating toggle panel
+			-- Opens/closes cleanly, uses Click (not Down) to avoid scroll mis-taps
+			-- ========================================================
+			function Data:AddESPPanel(Options)
+				local Selected = (Options and Config[Options.Config]) or {};
+				local List = (Options and Options.List) or {};
+
+				-- The open/close button on the settings bar button
+				local OpenBtn = Utility:Instance("TextButton", {
 					Parent = Data.Button;
 					AnchorPoint = Vector2.new(0.5, 0.5);
 					BackgroundColor3 = Color3.fromRGB(15, 5, 5);
 					BackgroundTransparency = 0;
 					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 0.28, 0);
-					Size = UDim2.new(0.85, 0, 0.38, 0);
+					Position = UDim2.new(0.5, 0, 0.5, 0);
+					Size = UDim2.new(0.82, 0, 0.58, 0);
 					Font = Enum.Font.FredokaOne;
+					Text = "☰ List";
 					TextColor3 = Color3.fromRGB(220, 200, 200);
 					TextScaled = true;
 					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
 					Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 20, 20); Thickness = 1; });
-					Utility:Instance("TextLabel", {
-						AnchorPoint = Vector2.new(0.5, 1);
-						BackgroundTransparency = 1;
-						Position = UDim2.new(0.5, 0, 0, 0);
-						Size = UDim2.new(1, 0, 0.9, 0);
-						Font = Enum.Font.FredokaOne;
-						Text = Display;
-						TextColor3 = Color3.fromRGB(160, 130, 130);
-						TextScaled = true;
-						TextXAlignment = Enum.TextXAlignment.Center;
-					});
 				});
-				for Index, Value in pairs(Properties or {}) do
-					Control[Index] = Value;
-					if Index == "Text" and Options.Config then
-						Config[Options.Config] = Value;
-						Utility:SaveConfig(Config, Directory, File_Name);
-					end
-				end;
-				
-				if Type == "Integer" then Control:GetPropertyChangedSignal("Text"):Connect(function() Control.Text = string.match(Control.Text, (Negative and "[-]?" or "").."%d*"); end) end
-				if Type == "Number" then Control:GetPropertyChangedSignal("Text"):Connect(function() Control.Text = string.match(Control.Text, (Negative and "[-]?" or "").."%d*[%.]?%d*"); end) end
-				
-				Control.FocusLost:Connect(function()
-					if Options.Config then
-						Config[Options.Config] = Control.Text;
-						Utility:SaveConfig(Config, Directory, File_Name);
-					end
-				end)
-				
-				return Control;
-			end;
 
-			function Data:AddDropdrown(Properties, Options)
-				local Selected = Options and Config[Options.Config] or {};
-				local List = Options and Options.List or {};
-				local Control = { Selected = Selected; };
-				Control.Button = Utility:Instance("TextButton", {
-					Parent = Data.Button;
-					AnchorPoint = Vector2.new(0.5, 1);
-					BackgroundColor3 = Color3.fromRGB(15, 5, 5);
-					BackgroundTransparency = 0;
-					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 0, -4);
-					Size = UDim2.new(0.85, 0, 0.42, 0);
-					Font = Enum.Font.FredokaOne;
-					Text = "☰ ESP List";
-					TextColor3 = Color3.fromRGB(220, 200, 200);
-					TextScaled = true;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
-					Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 20, 20); Thickness = 1; });
+				-- Floating panel — parented to PlayerGui so it sits ABOVE everything
+				-- and doesn't block the settings bar
+				local PanelGui = Utility:Instance("ScreenGui", {
+					Name = "ESPPanel";
+					Parent = PlayerGui;
+					ResetOnSpawn = false;
+					DisplayOrder = 99;
 				});
-				for Index, Value in pairs(Properties or {}) do
-					if Control.Button[Index] then Control.Button[Index] = Value; end
-				end;
-				-- Dropdown opens as a full-width overlay above the settings bar
-				Control.Scroll = Utility:Instance("Frame", {
-					Parent = PlayerGui.Journal.Background;
-					AnchorPoint = Vector2.new(0, 1);
-					BackgroundColor3 = Color3.fromRGB(10, 5, 5);
-					BackgroundTransparency = 0;
+
+				-- Dark overlay to capture outside clicks (closes panel)
+				local Overlay = Utility:Instance("TextButton", {
+					Parent = PanelGui;
+					BackgroundColor3 = Color3.fromRGB(0, 0, 0);
+					BackgroundTransparency = 0.6;
 					BorderSizePixel = 0;
-					Position = UDim2.new(0, 0, 0, -4);
-					Size = UDim2.new(1, 0, 0, 220);
+					Size = UDim2.new(1, 0, 1, 0);
+					Text = "";
+					ZIndex = 1;
 					Visible = false;
-					ZIndex = 5;
-					ClipsDescendants = true;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 10); });
-					Utility:Instance("UIStroke", { Color = Color3.fromRGB(120, 20, 20); Thickness = 1.5; });
-					Utility:Instance("TextLabel", {
-						BackgroundTransparency = 1;
-						Size = UDim2.new(1, 0, 0, 28);
-						Font = Enum.Font.FredokaOne;
-						Text = "— SELECT ESP TARGETS —";
-						TextColor3 = Color3.fromRGB(180, 50, 50);
-						TextScaled = true;
-						ZIndex = 5;
-					});
-					Utility:Instance("ScrollingFrame", {
-						AnchorPoint = Vector2.new(0.5, 1);
-						BackgroundTransparency = 1;
-						Position = UDim2.new(0.5, 0, 1, -4);
-						Size = UDim2.new(0.97, 0, 1, -32);
-						ZIndex = 5;
-						AutomaticCanvasSize = Enum.AutomaticSize.Y;
-						CanvasSize = UDim2.new(0, 0, 0, 0);
-						ScrollBarImageColor3 = Color3.fromRGB(180, 50, 50);
-						ScrollBarThickness = 4;
-						Utility:Instance("UIGridLayout", {
-							CellSize = UDim2.new(0.3, -4, 0, 36);
-							CellPadding = UDim2.new(0, 4, 0, 4);
-							SortOrder = Enum.SortOrder.LayoutOrder;
-						});
-						Utility:Instance("UIPadding", { PaddingLeft = UDim.new(0, 4); PaddingRight = UDim.new(0, 4); PaddingTop = UDim.new(0, 2); });
-					})
 				});
-				for _, Item in pairs(List) do
-					local Button = Utility:Instance("TextButton", {
-						Name = Item;
-						Parent = Control.Scroll["ScrollingFrame"];
-						BackgroundColor3 = Color3.fromRGB(30, 10, 10);
-						Size = UDim2.new(0, 0, 0, 0);
-						Text = Item;
-						Font = Enum.Font.FredokaOne;
-						TextColor3 = Color3.fromRGB(200, 180, 180);
-						TextScaled = true;
-						ZIndex = 6;
-						Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
-						Utility:Instance("UIStroke", { Color = Color3.fromRGB(80, 15, 15); Thickness = 1; ZIndex = 6; });
-					});
-					if table.find(Control.Selected, Item) then
-						Button.BackgroundColor3 = Color3.fromRGB(120, 10, 10);
-						Button["UIStroke"].Color = Color3.fromRGB(200, 30, 30);
-					else
-						Button.BackgroundColor3 = Color3.fromRGB(30, 10, 10);
-						Button["UIStroke"].Color = Color3.fromRGB(80, 15, 15);
-					end
 
-					Button.MouseButton1Down:Connect(function()
-						if table.find(Control.Selected, Item) then
-							table.remove(Control.Selected, table.find(Control.Selected, Item));
-							Button.BackgroundColor3 = Color3.fromRGB(30, 10, 10);
-							Button["UIStroke"].Color = Color3.fromRGB(80, 15, 15);
-						else
-							table.insert(Control.Selected, Item);
-							Button.BackgroundColor3 = Color3.fromRGB(120, 10, 10);
-							Button["UIStroke"].Color = Color3.fromRGB(200, 30, 30);
+				-- Main panel
+				local Panel = Utility:Instance("Frame", {
+					Parent = PanelGui;
+					AnchorPoint = Vector2.new(0.5, 0.5);
+					BackgroundColor3 = Color3.fromRGB(10, 4, 4);
+					BackgroundTransparency = 0;
+					BorderSizePixel = 0;
+					Position = UDim2.new(0.5, 0, 0.5, 0);
+					Size = UDim2.new(0, 320, 0, 380);
+					ZIndex = 2;
+					Visible = false;
+					ClipsDescendants = true;
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 12); });
+					Utility:Instance("UIStroke", { Color = Color3.fromRGB(160, 20, 20); Thickness = 2; });
+				});
+
+				-- Title bar
+				local TitleBar = Utility:Instance("Frame", {
+					Parent = Panel;
+					BackgroundColor3 = Color3.fromRGB(20, 5, 5);
+					BackgroundTransparency = 0;
+					BorderSizePixel = 0;
+					Size = UDim2.new(1, 0, 0, 36);
+					ZIndex = 3;
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 12); });
+					Utility:Instance("TextLabel", {
+						AnchorPoint = Vector2.new(0, 0.5);
+						BackgroundTransparency = 1;
+						Position = UDim2.new(0, 12, 0.5, 0);
+						Size = UDim2.new(0.7, 0, 1, 0);
+						Font = Enum.Font.FredokaOne;
+						Text = "ESP Targets";
+						TextColor3 = Color3.fromRGB(200, 60, 60);
+						TextScaled = true;
+						TextXAlignment = Enum.TextXAlignment.Left;
+						ZIndex = 3;
+					});
+				});
+
+				-- Close button in title bar
+				local CloseBtn = Utility:Instance("TextButton", {
+					Parent = TitleBar;
+					AnchorPoint = Vector2.new(1, 0.5);
+					BackgroundColor3 = Color3.fromRGB(120, 10, 10);
+					BackgroundTransparency = 0;
+					BorderSizePixel = 0;
+					Position = UDim2.new(1, -8, 0.5, 0);
+					Size = UDim2.new(0, 24, 0, 24);
+					Font = Enum.Font.FredokaOne;
+					Text = "✕";
+					TextColor3 = Color3.fromRGB(255, 200, 200);
+					TextScaled = true;
+					ZIndex = 4;
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
+				});
+
+				-- Scrolling frame for items
+				local Scroll = Utility:Instance("ScrollingFrame", {
+					Parent = Panel;
+					AnchorPoint = Vector2.new(0.5, 1);
+					BackgroundTransparency = 1;
+					BorderSizePixel = 0;
+					Position = UDim2.new(0.5, 0, 1, -8);
+					Size = UDim2.new(1, -16, 1, -48);
+					ZIndex = 3;
+					AutomaticCanvasSize = Enum.AutomaticSize.Y;
+					CanvasSize = UDim2.new(0, 0, 0, 0);
+					ScrollBarImageColor3 = Color3.fromRGB(180, 40, 40);
+					ScrollBarThickness = 4;
+					ScrollingDirection = Enum.ScrollingDirection.Y;
+					Utility:Instance("UIGridLayout", {
+						CellSize = UDim2.new(0.5, -8, 0, 40);
+						CellPadding = UDim2.new(0, 6, 0, 6);
+						SortOrder = Enum.SortOrder.LayoutOrder;
+					});
+					Utility:Instance("UIPadding", {
+						PaddingLeft = UDim.new(0, 6);
+						PaddingRight = UDim.new(0, 6);
+						PaddingTop = UDim.new(0, 4);
+						PaddingBottom = UDim.new(0, 4);
+					});
+				});
+
+				-- Build toggle rows for each ESP item
+				local ItemButtons = {};
+				for _, Item in pairs(List) do
+					local IsOn = table.find(Selected, Item) ~= nil;
+
+					local Row = Utility:Instance("Frame", {
+						Name = Item;
+						Parent = Scroll;
+						BackgroundColor3 = IsOn and Color3.fromRGB(80, 10, 10) or Color3.fromRGB(22, 8, 8);
+						BackgroundTransparency = 0;
+						BorderSizePixel = 0;
+						Size = UDim2.new(0, 0, 0, 0); -- controlled by UIGridLayout
+						ZIndex = 4;
+						Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 8); });
+						Utility:Instance("UIStroke", { Color = IsOn and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(60, 12, 12); Thickness = 1.2; });
+					});
+
+					-- Item name label
+					Utility:Instance("TextLabel", {
+						Parent = Row;
+						AnchorPoint = Vector2.new(0, 0.5);
+						BackgroundTransparency = 1;
+						Position = UDim2.new(0, 8, 0.5, 0);
+						Size = UDim2.new(1, -44, 1, 0);
+						Font = Enum.Font.FredokaOne;
+						Text = Item;
+						TextColor3 = IsOn and Color3.fromRGB(255, 200, 200) or Color3.fromRGB(180, 150, 150);
+						TextScaled = true;
+						TextXAlignment = Enum.TextXAlignment.Left;
+						TextTruncate = Enum.TextTruncate.AtEnd;
+						ZIndex = 5;
+					});
+
+					-- Toggle pill on the right
+					local Pill = Utility:Instance("Frame", {
+						Parent = Row;
+						AnchorPoint = Vector2.new(1, 0.5);
+						BackgroundColor3 = IsOn and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(50, 50, 50);
+						BorderSizePixel = 0;
+						Position = UDim2.new(1, -8, 0.5, 0);
+						Size = UDim2.new(0, 28, 0, 14);
+						ZIndex = 5;
+						Utility:Instance("UICorner", { CornerRadius = UDim.new(1, 0); });
+					});
+
+					-- Pill dot
+					local Dot = Utility:Instance("Frame", {
+						Parent = Pill;
+						AnchorPoint = Vector2.new(IsOn and 1 or 0, 0.5);
+						BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+						BorderSizePixel = 0;
+						Position = IsOn and UDim2.new(1, -2, 0.5, 0) or UDim2.new(0, 2, 0.5, 0);
+						Size = UDim2.new(0, 10, 0, 10);
+						ZIndex = 6;
+						Utility:Instance("UICorner", { CornerRadius = UDim.new(1, 0); });
+					});
+
+					local function SetToggle(on)
+						IsOn = on;
+						-- Update selected list
+						local idx = table.find(Selected, Item);
+						if on and not idx then
+							table.insert(Selected, Item);
+						elseif not on and idx then
+							table.remove(Selected, idx);
 						end
-						if Options.Config then
-							Config[Options.Config] = Control.Selected;
+						-- Update visual
+						Row.BackgroundColor3 = on and Color3.fromRGB(80, 10, 10) or Color3.fromRGB(22, 8, 8);
+						Row["UIStroke"].Color = on and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(60, 12, 12);
+						Row["TextLabel"].TextColor3 = on and Color3.fromRGB(255, 200, 200) or Color3.fromRGB(180, 150, 150);
+						Pill.BackgroundColor3 = on and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(50, 50, 50);
+						Dot.AnchorPoint = on and Vector2.new(1, 0.5) or Vector2.new(0, 0.5);
+						Dot.Position = on and UDim2.new(1, -2, 0.5, 0) or UDim2.new(0, 2, 0.5, 0);
+
+						if Options and Options.Config then
+							Config[Options.Config] = Selected;
 							Utility:SaveConfig(Config, Directory, File_Name);
 						end
-						if Options.Callback then Options.Callback(Control.Selected); end
+						if Options and Options.Callback then Options.Callback(Selected); end
+					end
+
+					-- Use MouseButton1Click to avoid accidental toggles while scrolling
+					local ClickButton = Utility:Instance("TextButton", {
+						Parent = Row;
+						BackgroundTransparency = 1;
+						BorderSizePixel = 0;
+						Size = UDim2.new(1, 0, 1, 0);
+						Text = "";
+						ZIndex = 7;
+					});
+					ClickButton.MouseButton1Click:Connect(function()
+						SetToggle(not IsOn);
 					end)
+
+					ItemButtons[Item] = { Row = Row, SetToggle = SetToggle };
 				end
 
-				Control.Button.MouseButton1Down:Connect(function()
-					Control.Scroll.Visible = not Control.Scroll.Visible
-					if Control.Scroll.Visible then Control.Button.Text = "✕ Close";
-					else Control.Button.Text = "☰ ESP List"; end
-				end)
+				-- Open / close logic
+				local PanelOpen = false;
+				local function OpenPanel()
+					PanelOpen = true;
+					Overlay.Visible = true;
+					Panel.Visible = true;
+					OpenBtn.Text = "✕ Close";
+				end
+				local function ClosePanel()
+					PanelOpen = false;
+					Overlay.Visible = false;
+					Panel.Visible = false;
+					OpenBtn.Text = "☰ List";
+				end
 
-				return Control;
+				OpenBtn.MouseButton1Click:Connect(function()
+					if PanelOpen then ClosePanel() else OpenPanel() end
+				end)
+				CloseBtn.MouseButton1Click:Connect(ClosePanel)
+				Overlay.MouseButton1Click:Connect(ClosePanel)
+
+				return { Selected = Selected; ItemButtons = ItemButtons; };
 			end
 
 			function Data:AddButton(Properties, Options)
@@ -616,7 +767,7 @@ end)()
 			
 			function Data:Set(Value)
 				Data.Enabled = Value;
-				if Options.Config then
+				if Options and Options.Config then
 					Config[Options.Config] = Data.Enabled;
 					Utility:SaveConfig(Config, Directory, File_Name);
 				end
@@ -641,7 +792,7 @@ end)()
 			Data.Button.MouseButton1Down:Connect(function() Data:Set(not Data.Enabled); end)
 			if UserIS.KeyboardEnabled and UserIS.MouseEnabled and not UserIS.TouchEnabled then
 				if Keybind ~= nil then
-					Data.Button["TextLabel"].Text = Name .." [".. Keybind.Name .."]";
+					Data.Button["Label"].Text = Name .." [".. Keybind.Name .."]";
 					UserIS.InputBegan:Connect(function(input, gameProcessed)
 						if gameProcessed then return; end
 						if input.KeyCode == Keybind then Data:Set(not Data.Enabled); end
@@ -897,11 +1048,6 @@ local Freecam = {
 	IgnoreGUI = {};
 }
 
-------------------------------------------------------------------------
--- Freecam
--- Cinematic free camera for spectating and video production.
-------------------------------------------------------------------------
-
 local pi    = math.pi
 local abs   = math.abs
 local clamp = math.clamp
@@ -935,20 +1081,7 @@ Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
 	end
 end)
 
-------------------------------------------------------------------------
-
 local GUI = {} do
-	local function Create(Name, Data)
-		local Object = Instance.new(Name, Data.Parent);
-		for Index, Value in next, Data do
-			if Index ~= "Parent" then
-				if typeof(Value) == "Instance" then Value.Parent = Object;
-				else Object[Index] = Value; end
-			end
-		end
-		return Object;
-	end
-	
 	GUI.UI = Utility:Instance("ScreenGui", {
 		Name = "MobileFreecam";
 		Parent = LocalPlayer.PlayerGui;
@@ -1004,8 +1137,6 @@ local GUI = {} do
 	end
 end
 
-------------------------------------------------------------------------
-
 local Spring = {} do
 	Spring.__index = Spring
 
@@ -1040,8 +1171,6 @@ local Spring = {} do
 	end
 end
 
-------------------------------------------------------------------------
-
 local cameraPos = Vector3.new()
 local cameraRot = Vector2.new()
 local cameraFov = 0
@@ -1049,8 +1178,6 @@ local cameraFov = 0
 local velSpring = Spring.new(Freecam.VEL_STIFFNESS, Vector3.new())
 local panSpring = Spring.new(Freecam.PAN_STIFFNESS, Vector2.new())
 local fovSpring = Spring.new(Freecam.FOV_STIFFNESS, 0)
-
-------------------------------------------------------------------------
 
 local Input = {} do
 	local thumbstickCurve do
@@ -1071,33 +1198,12 @@ local Input = {} do
 	end
 
 	local gamepad = {
-		ButtonX = 0,
-		ButtonY = 0,
-		DPadDown = 0,
-		DPadUp = 0,
-		ButtonL2 = 0,
-		ButtonR2 = 0,
-		Thumbstick1 = Vector2.new(),
-		Thumbstick2 = Vector2.new(),
+		ButtonX = 0, ButtonY = 0, DPadDown = 0, DPadUp = 0,
+		ButtonL2 = 0, ButtonR2 = 0,
+		Thumbstick1 = Vector2.new(), Thumbstick2 = Vector2.new(),
 	}
-
-	local keyboard = {
-		W = 0,
-		A = 0,
-		S = 0,
-		D = 0,
-		E = 0,
-		Q = 0,
-		Up = 0,
-		Down = 0,
-		LeftShift = 0,
-		RightShift = 0,
-	}
-
-	local mouse = {
-		Delta = Vector2.new(),
-		MouseWheel = 0,
-	}
+	local keyboard = { W=0, A=0, S=0, D=0, E=0, Q=0, Up=0, Down=0, LeftShift=0, RightShift=0, }
+	local mouse = { Delta = Vector2.new(), MouseWheel = 0, }
 
 	local NAV_GAMEPAD_SPEED  = Vector3.new(1, 1, 1)
 	local NAV_KEYBOARD_SPEED = Vector3.new(1, 1, 1)
@@ -1107,41 +1213,23 @@ local Input = {} do
 	local FOV_GAMEPAD_SPEED  = 0.25
 	local NAV_ADJ_SPEED      = 0.75
 	local NAV_SHIFT_MUL      = 0.25
-
 	local navSpeed = 1
 
 	function Input.Vel(dt)
 		navSpeed = clamp(navSpeed + dt*(keyboard.Up - keyboard.Down)*NAV_ADJ_SPEED, 0.01, 4)
-
-		local kGamepad = Vector3.new(
-			thumbstickCurve(gamepad.Thumbstick1.X),
-			thumbstickCurve(gamepad.ButtonR2) - thumbstickCurve(gamepad.ButtonL2),
-			thumbstickCurve(-gamepad.Thumbstick1.Y)
-		)*NAV_GAMEPAD_SPEED
-
-		local kKeyboard = Vector3.new(
-			keyboard.D - keyboard.A,
-			keyboard.E - keyboard.Q,
-			keyboard.S - keyboard.W
-		)*NAV_KEYBOARD_SPEED
-
+		local kGamepad = Vector3.new(thumbstickCurve(gamepad.Thumbstick1.X), thumbstickCurve(gamepad.ButtonR2) - thumbstickCurve(gamepad.ButtonL2), thumbstickCurve(-gamepad.Thumbstick1.Y))*NAV_GAMEPAD_SPEED
+		local kKeyboard = Vector3.new(keyboard.D - keyboard.A, keyboard.E - keyboard.Q, keyboard.S - keyboard.W)*NAV_KEYBOARD_SPEED
 		local shift = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
-
 		return (kGamepad + kKeyboard)*(navSpeed*(shift and NAV_SHIFT_MUL or 1))
 	end
 
 	function Input.Pan(dt)
-		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled
-			and not UserInputService.GamepadEnabled and not GuiService:IsTenFootInterface() then
+		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled and not UserInputService.GamepadEnabled and not GuiService:IsTenFootInterface() then
 			local x = -UserInputService:GetMouseDelta().X
 			local y = -UserInputService:GetMouseDelta().Y
-			local delta = Vector2.new(y, x)
-			mouse.Delta = delta
+			mouse.Delta = Vector2.new(y, x)
 		end
-		local kGamepad = Vector2.new(
-			thumbstickCurve(gamepad.Thumbstick2.Y),
-			thumbstickCurve(-gamepad.Thumbstick2.X)
-		)*PAN_GAMEPAD_SPEED
+		local kGamepad = Vector2.new(thumbstickCurve(gamepad.Thumbstick2.Y), thumbstickCurve(-gamepad.Thumbstick2.X))*PAN_GAMEPAD_SPEED
 		local kMouse = mouse.Delta*PAN_MOUSE_SPEED
 		mouse.Delta = Vector2.new()
 		return kGamepad + kMouse
@@ -1155,65 +1243,25 @@ local Input = {} do
 	end
 
 	do
-		local function Keypress(action, state, input)
-			keyboard[input.KeyCode.Name] = state == Enum.UserInputState.Begin and 1 or 0
-			return Enum.ContextActionResult.Sink
-		end
-
-		local function GpButton(action, state, input)
-			gamepad[input.KeyCode.Name] = state == Enum.UserInputState.Begin and 1 or 0
-			return Enum.ContextActionResult.Sink
-		end
-
-		local function MousePan(action, state, input)
-			local delta = input.Delta
-			mouse.Delta = Vector2.new(-delta.y, -delta.x)
-			return Enum.ContextActionResult.Sink
-		end
-
-		local function Thumb(action, state, input)
-			gamepad[input.KeyCode.Name] = input.Position
-			return Enum.ContextActionResult.Sink
-		end
-
-		local function Trigger(action, state, input)
-			gamepad[input.KeyCode.Name] = input.Position.z
-			return Enum.ContextActionResult.Sink
-		end
-
-		local function MouseWheel(action, state, input)
-			mouse[input.UserInputType.Name] = -input.Position.z
-			return Enum.ContextActionResult.Sink
-		end
-
-		local function Zero(t)
-			for k, v in pairs(t) do
-				t[k] = v*0
-			end
-		end
+		local function Keypress(action, state, input) keyboard[input.KeyCode.Name] = state == Enum.UserInputState.Begin and 1 or 0; return Enum.ContextActionResult.Sink end
+		local function GpButton(action, state, input) gamepad[input.KeyCode.Name] = state == Enum.UserInputState.Begin and 1 or 0; return Enum.ContextActionResult.Sink end
+		local function MousePan(action, state, input) local delta = input.Delta; mouse.Delta = Vector2.new(-delta.y, -delta.x); return Enum.ContextActionResult.Sink end
+		local function Thumb(action, state, input) gamepad[input.KeyCode.Name] = input.Position; return Enum.ContextActionResult.Sink end
+		local function Trigger(action, state, input) gamepad[input.KeyCode.Name] = input.Position.z; return Enum.ContextActionResult.Sink end
+		local function MouseWheel(action, state, input) mouse[input.UserInputType.Name] = -input.Position.z; return Enum.ContextActionResult.Sink end
+		local function Zero(t) for k, v in pairs(t) do t[k] = v*0 end end
 
 		function Input.StartCapture()
-			ContextActionService:BindActionAtPriority("FreecamKeyboard", Keypress, false, Freecam.INPUT_PRIORITY,
-				Enum.KeyCode.W,
-				Enum.KeyCode.A,
-				Enum.KeyCode.S,
-				Enum.KeyCode.D,
-				Enum.KeyCode.E,
-				Enum.KeyCode.Q,
-				Enum.KeyCode.Up, Enum.KeyCode.Down
-			)
+			ContextActionService:BindActionAtPriority("FreecamKeyboard", Keypress, false, Freecam.INPUT_PRIORITY, Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D, Enum.KeyCode.E, Enum.KeyCode.Q, Enum.KeyCode.Up, Enum.KeyCode.Down)
 			ContextActionService:BindActionAtPriority("FreecamMousePan",          MousePan,   false, Freecam.INPUT_PRIORITY, Enum.UserInputType.MouseMovement)
 			ContextActionService:BindActionAtPriority("FreecamMouseWheel",        MouseWheel, false, Freecam.INPUT_PRIORITY, Enum.UserInputType.MouseWheel)
 			ContextActionService:BindActionAtPriority("FreecamGamepadButton",     GpButton,   false, Freecam.INPUT_PRIORITY, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY)
 			ContextActionService:BindActionAtPriority("FreecamGamepadTrigger",    Trigger,    false, Freecam.INPUT_PRIORITY, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonL2)
 			ContextActionService:BindActionAtPriority("FreecamGamepadThumbstick", Thumb,      false, Freecam.INPUT_PRIORITY, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2)
 		end
-
 		function Input.StopCapture()
 			navSpeed = 1
-			Zero(gamepad)
-			Zero(keyboard)
-			Zero(mouse)
+			Zero(gamepad); Zero(keyboard); Zero(mouse)
 			ContextActionService:UnbindAction("FreecamKeyboard")
 			ContextActionService:UnbindAction("FreecamMousePan")
 			ContextActionService:UnbindAction("FreecamMouseWheel")
@@ -1221,7 +1269,7 @@ local Input = {} do
 			ContextActionService:UnbindAction("FreecamGamepadTrigger")
 			ContextActionService:UnbindAction("FreecamGamepadThumbstick")
 		end
-		
+
 		GUI.Forward.TextButton.MouseButton1Down:Connect(function() keyboard["W"] = 1; end)
 		GUI.Forward.TextButton.MouseLeave:Connect(function() keyboard["W"] = 0; end)
 		GUI.Backward.TextButton.MouseButton1Down:Connect(function() keyboard["S"] = 1; end)
@@ -1241,10 +1289,8 @@ local function GetFocusDistance(cameraFrame)
 	local fx = cameraFrame.rightVector
 	local fy = cameraFrame.upVector
 	local fz = cameraFrame.lookVector
-
 	local minVect = Vector3.new()
 	local minDist = 512
-
 	for x = 0, 1, 0.5 do
 		for y = 0, 1, 0.5 do
 			local cx = (x - 0.5)*projx
@@ -1253,130 +1299,64 @@ local function GetFocusDistance(cameraFrame)
 			local origin = cameraFrame.p + offset*znear
 			local _, hit = Workspace:FindPartOnRay(Ray.new(origin, offset.unit*minDist))
 			local dist = (hit - origin).magnitude
-			if minDist > dist then
-				minDist = dist
-				minVect = offset.unit
-			end
+			if minDist > dist then minDist = dist; minVect = offset.unit end
 		end
 	end
-
 	return fz:Dot(minVect)*minDist
 end
-
-------------------------------------------------------------------------
 
 local function StepFreecam(dt)
 	local vel = velSpring:Update(dt, Input.Vel(dt))
 	local pan = panSpring:Update(dt, Input.Pan(dt))
 	local fov = fovSpring:Update(dt, Input.Fov(dt))
-
 	local zoomFactor = sqrt(tan(rad(70/2))/tan(rad(cameraFov/2)))
-
 	cameraFov = clamp(cameraFov + fov*Freecam.FOV_GAIN*(dt/zoomFactor), 1, 120)
 	cameraRot = cameraRot + pan*Freecam.PAN_GAIN*(dt/zoomFactor)
 	cameraRot = Vector2.new(clamp(cameraRot.x, -Freecam.PITCH_LIMIT, Freecam.PITCH_LIMIT), cameraRot.y%(2*pi))
-
 	local cameraCFrame = CFrame.new(cameraPos)*CFrame.fromOrientation(cameraRot.x, cameraRot.y, 0)*CFrame.new(vel*Freecam.NAV_GAIN*dt)
 	cameraPos = cameraCFrame.p
-
 	Camera.CFrame = cameraCFrame
 	Camera.Focus = cameraCFrame*CFrame.new(0, 0, -GetFocusDistance(cameraCFrame))
 	Camera.FieldOfView = cameraFov
 end
 
-------------------------------------------------------------------------
-
 local PlayerState = {} do
-	local mouseBehavior
-	local mouseIconEnabled
-	local cameraType
-	local cameraFocus
-	local cameraCFrame
-	local cameraFieldOfView
+	local mouseBehavior, mouseIconEnabled, cameraType, cameraFocus, cameraCFrame, cameraFieldOfView
 	local screenGuis = {}
-	local coreGuis = {
-		Backpack = true,
-		Chat = true,
-		Health = true,
-		PlayerList = true,
-	}
-	local setCores = {
-		BadgesNotificationsActive = true,
-		PointsNotificationsActive = true,
-	}
+	local coreGuis = { Backpack=true, Chat=true, Health=true, PlayerList=true }
+	local setCores = { BadgesNotificationsActive=true, PointsNotificationsActive=true }
 
-	-- Save state and set up for freecam
 	function PlayerState.Push()
-		for name in pairs(coreGuis) do
-			coreGuis[name] = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType[name])
-			StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType[name], false)
-		end
-		for name in pairs(setCores) do
-			setCores[name] = StarterGui:GetCore(name)
-			StarterGui:SetCore(name, false)
-		end
+		for name in pairs(coreGuis) do coreGuis[name] = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType[name]); StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType[name], false) end
+		for name in pairs(setCores) do setCores[name] = StarterGui:GetCore(name); StarterGui:SetCore(name, false) end
 		local playergui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
 		if playergui then
 			for _, gui in pairs(playergui:GetChildren()) do
 				if gui:IsA("ScreenGui") and gui.Enabled then
 					if table.find(Freecam.IgnoreGUI, gui.Name) then continue end
-					screenGuis[#screenGuis + 1] = gui
-					gui.Enabled = false
+					screenGuis[#screenGuis + 1] = gui; gui.Enabled = false
 				end
 			end
 		end
-
-		cameraFieldOfView = Camera.FieldOfView
-		Camera.FieldOfView = 70
-
-		cameraType = Camera.CameraType
-		Camera.CameraType = Enum.CameraType.Custom
-
-		cameraCFrame = Camera.CFrame
-		cameraFocus = Camera.Focus
-
-		mouseIconEnabled = UserInputService.MouseIconEnabled
-		UserInputService.MouseIconEnabled = false
-
-		mouseBehavior = UserInputService.MouseBehavior
-		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		cameraFieldOfView = Camera.FieldOfView; Camera.FieldOfView = 70
+		cameraType = Camera.CameraType; Camera.CameraType = Enum.CameraType.Custom
+		cameraCFrame = Camera.CFrame; cameraFocus = Camera.Focus
+		mouseIconEnabled = UserInputService.MouseIconEnabled; UserInputService.MouseIconEnabled = false
+		mouseBehavior = UserInputService.MouseBehavior; UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	end
 
-	-- Restore state
 	function PlayerState.Pop()
-		for name, isEnabled in pairs(coreGuis) do
-			StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType[name], isEnabled)
-		end
-		for name, isEnabled in pairs(setCores) do
-			StarterGui:SetCore(name, isEnabled)
-		end
-		for _, gui in pairs(screenGuis) do
-			if gui.Parent then
-				gui.Enabled = true
-			end
-		end
-
-		Camera.FieldOfView = cameraFieldOfView
-		cameraFieldOfView = nil
-
-		Camera.CameraType = cameraType
-		cameraType = nil
-
-		Camera.CFrame = cameraCFrame
-		cameraCFrame = nil
-
-		Camera.Focus = cameraFocus
-		cameraFocus = nil
-
-		UserInputService.MouseIconEnabled = mouseIconEnabled
-		mouseIconEnabled = nil
-
-		UserInputService.MouseBehavior = mouseBehavior
-		mouseBehavior = nil
+		for name, isEnabled in pairs(coreGuis) do StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType[name], isEnabled) end
+		for name, isEnabled in pairs(setCores) do StarterGui:SetCore(name, isEnabled) end
+		for _, gui in pairs(screenGuis) do if gui.Parent then gui.Enabled = true end end
+		Camera.FieldOfView = cameraFieldOfView; cameraFieldOfView = nil
+		Camera.CameraType = cameraType; cameraType = nil
+		Camera.CFrame = cameraCFrame; cameraCFrame = nil
+		Camera.Focus = cameraFocus; cameraFocus = nil
+		UserInputService.MouseIconEnabled = mouseIconEnabled; mouseIconEnabled = nil
+		UserInputService.MouseBehavior = mouseBehavior; mouseBehavior = nil
 	end
 end
-
-------------------------------------------------------------------------
 
 do
 	function Freecam.StartFreecam()
@@ -1384,53 +1364,26 @@ do
 		cameraRot = Vector2.new(cameraCFrame:toEulerAnglesYXZ())
 		cameraPos = cameraCFrame.p
 		cameraFov = Camera.FieldOfView
-
-		velSpring:Reset(Vector3.new())
-		panSpring:Reset(Vector2.new())
-		fovSpring:Reset(0)
-
+		velSpring:Reset(Vector3.new()); panSpring:Reset(Vector2.new()); fovSpring:Reset(0)
 		PlayerState.Push()
-		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled
-			and not UserInputService.GamepadEnabled and not GuiService:IsTenFootInterface() then
-			GUI:Show();
-		end
+		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled and not UserInputService.GamepadEnabled and not GuiService:IsTenFootInterface() then GUI:Show(); end
 		RunService:BindToRenderStep("Freecam", Enum.RenderPriority.Camera.Value, StepFreecam)
 		Input.StartCapture()
 	end
-
 	function Freecam.StopFreecam()
 		Input.StopCapture()
 		RunService:UnbindFromRenderStep("Freecam")
 		PlayerState.Pop()
-		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled
-			and not UserInputService.GamepadEnabled and not GuiService:IsTenFootInterface() then
-			GUI:Hide();
-		end
+		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled and not UserInputService.GamepadEnabled and not GuiService:IsTenFootInterface() then GUI:Hide(); end
 	end
-	
 	function Freecam.ToggleFreecam()
-		if Freecam.Enabled then Freecam.StopFreecam()
-		else Freecam.StartFreecam() end
+		if Freecam.Enabled then Freecam.StopFreecam() else Freecam.StartFreecam() end
 		Freecam.Enabled = not Freecam.Enabled
 	end
 end
 return Freecam
 end)()
 	FreecamModule.IgnoreGUI = {"Radio", "Journal", "MobileUI", "Statusifier"}
-
-	local Light;
-	if LocalPlayer.Character:FindFirstChild("HumanoidRootPart"):FindFirstChild("SpotLight") then
-		Light = LocalPlayer.Character:FindFirstChild("HumanoidRootPart"):FindFirstChild("SpotLight")
-	else
-		Light = Utility:Instance("SpotLight", {
-			Parent = LocalPlayer.Character:FindFirstChild("HumanoidRootPart");
-			Brightness = 10;
-			Range = 60;
-			Face = Enum.NormalId.Front;
-			Angle = 120;
-			Shadows = false;
-		});
-	end
 
 	local Sprinting = false
 
@@ -1495,7 +1448,7 @@ end)()
 			if item:WaitForChild("GhostIncensed").Value then return false; end
 		end
 		if item.Name == "Photo Camera" then
-			if item:WaitForChild("PhotoCameraMemory") then
+			if item:FindFirstChild("PhotoCameraMemory") then
 				if item["PhotoCameraMemory"]:WaitForChild("Memory").Value == 100 then return false; end
 				if item["PhotoCameraMemory"]:WaitForChild("MemoryCapacity").Text == "100/100 MB" then return false; end
 			end
@@ -1516,42 +1469,27 @@ end)()
 	--------------------------
 	-- [[ USER INTERFACE ]] --
 	--------------------------
-	local CustomLights = CreateSettings("Custom Lights", { Config = "CustomLight"; Keybind = Enum.KeyCode.R; }, {
-		On = function() Light.Enabled = true end;
-		Off = function() Light.Enabled = false end;
-	});
-	local CustomLightsRange = CustomLights:AddTextbox({
-		Position = UDim2.new(0.25, 0, 0, -2);
-		Size = UDim2.new(0.4, 0, 0.8, 0);
-		Text = "60";
-	}, { Config = "CustomLightRange"; Display = "Range"; Type = "Integer"; });
-	local CustomLightBrightness = CustomLights:AddTextbox({
-		Position = UDim2.new(0.75, 0, 0, -2);
-		Size = UDim2.new(0.4, 0, 0.8, 0);
-		Text = "10";
-	}, { Config = "CustomLightBrightness"; Display = "Brightness"; Type = "Integer"; });
 
-	local CustomSprint = CreateSettings("Custom Sprint", { Config = "CustomSprint"; });
+	-- Custom Sprint (with speed input)
+	local CustomSprint = CreateSettings("Sprint", { Config = "CustomSprint"; });
 	local CustomSprintSpeed = CustomSprint:AddTextbox({ Text = "13"; }, { Config = "CustomSprintSpeed"; Display = "Speed"; Type = "Number"; });
 
-	local FullbrightAmbient;
+	-- Fullbright (simple toggle, no ambient field)
 	local Fullbright = CreateSettings("Fullbright", { Config = "Fullbright"; Keybind = Enum.KeyCode.T; }, {
 		On = function()
-			if FullbrightAmbient and FullbrightAmbient.Text ~= "" then Lighting.Ambient = Color3.fromRGB(tonumber(FullbrightAmbient.Text), tonumber(FullbrightAmbient.Text), tonumber(FullbrightAmbient.Text));
-			elseif Config["FullbrightAmbient"] then Lighting.Ambient = Color3.fromRGB(tonumber(Config["FullbrightAmbient"]), tonumber(Config["FullbrightAmbient"]), tonumber(Config["FullbrightAmbient"]));
-			else Lighting.Ambient = Color3.fromRGB(138, 138, 138); end
+			Lighting.Ambient = Color3.fromRGB(138, 138, 138);
 			Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128);
 			Lighting.Brightness = 2;
-			Lighting["Atmosphere"].Density = 0
+			Lighting["Atmosphere"].Density = 0;
 		end;
 		Off = function()
 			for index, value in pairs(SavedLighting) do Lighting[index] = value; end;
-			Lighting["Atmosphere"].Density = AtmosphereDensity
+			Lighting["Atmosphere"].Density = AtmosphereDensity;
 		end;
 	});
-	FullbrightAmbient = Fullbright:AddTextbox({ Text = "138"; }, { Config = "FullbrightAmbient"; Display = "Ambient"; Type = "Integer"; });
 
-	local NoClipDoor = CreateSettings("No Clip Door", { Config = "NoClipDoor"; Keybind = Enum.KeyCode.X; }, {
+	-- No Clip Door
+	local NoClipDoor = CreateSettings("No Clip", { Config = "NoClipDoor"; Keybind = Enum.KeyCode.X; }, {
 		On = function()
 			for _, v in pairs(Doors) do v.CanCollide = false end
 			game.Workspace["Map"]["Van"]["Van"]["Door"]["Lines"]["Part"].CanCollide = false;
@@ -1563,10 +1501,11 @@ end)()
 			game.Workspace["Map"]["Van"]["Van"]["Door"]["Main"].CanCollide = true;
 		end;
 	});
-	
-	local List =  Utility:CombineTable({"Ghost","BooBoo Doll","Generator","Players","Cursed Object","Backpack"}, Utility:GetTableKeys(BlairData["Items"]));
+
+	-- ESP toggle + ESP panel (replaces dropdown)
+	local List = Utility:CombineTable({"Ghost","BooBoo Doll","Generator","Players","Cursed Object","Backpack"}, Utility:GetTableKeys(BlairData["Items"]));
 	local ESP = CreateSettings("ESP", { Config = "ESP"; });
-	local ESPList = ESP:AddDropdrown({}, {
+	local ESPPanel = ESP:AddESPPanel({
 		Config = "ESPList";
 		List = List;
 		Callback = function()
@@ -1580,10 +1519,9 @@ end)()
 			end
 		end;
 	});
-	
-	local Freecam = CreateSettings("Freecam", { Config = "Freecam"; });
 
-	local SideStatus = CreateSettings("Side Status", { Config = "SideStatus"; }, {
+	-- Side Status (with scale input)
+	local SideStatus = CreateSettings("Status", { Config = "SideStatus"; }, {
 		On = function() PlayerGui["Statusifier"].Enabled = true; end;
 		Off = function() PlayerGui["Statusifier"].Enabled = false; end;
 	});
@@ -1607,30 +1545,23 @@ end)()
 				return nil;
 			end
 			local function TryFind(Name, Parent, WaitTime)
-				-- Try WaitForChild first
 				local found = Parent:WaitForChild(Name, WaitTime or 10);
 				if found then return found; end
-				-- Try finding in players
 				return FindCursedInPlayers(Name);
 			end
 
-			-- Summoning Circle
 			local SummoningCircle = game.Workspace:WaitForChild("SummoningCircle", 10);
 			if SummoningCircle then Objects.AddInfo("Summoning Circle"); AddCursedESP("[Summoning Circle]", SummoningCircle); end
 
-			-- Spirit Board
 			local SpiritBoard = game.Workspace:WaitForChild("Spirit Board", 10);
 			if SpiritBoard then Objects.AddInfo("Spirit Board"); AddCursedESP("[Spirit Board]", SpiritBoard); end
 
-			-- Tarot Cards
 			local TarotCards = TryFind("Tarot Cards", game.Workspace["Map"]["Items"], 10) or FindCursedInPlayers("Tarot Cards");
 			if TarotCards then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", TarotCards); end
 
-			-- Music Box
 			local MusicBox = TryFind("Music Box", game.Workspace["Map"]["Items"], 10) or FindCursedInPlayers("Music Box");
 			if MusicBox then Objects.AddInfo("Music Box"); AddCursedESP("[Music Box]", MusicBox); end
 
-			-- Watch for cursed objects spawning/moving after script loads
 			game.Workspace.ChildAdded:Connect(function(child)
 				if child.Name == "SummoningCircle" then Objects.AddInfo("Summoning Circle"); AddCursedESP("[Summoning Circle]", child); end
 				if child.Name == "Spirit Board" then Objects.AddInfo("Spirit Board"); AddCursedESP("[Spirit Board]", child); end
@@ -1691,13 +1622,11 @@ end)()
 
 				if CurrentHighlightedRoom ~= LowestTempRoom then
 					if RoomESP then RoomESP.Destroy(); end
-					-- Destroy old beam attachments
 					pcall(function()
 						if LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0") then LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0"):Destroy(); end
 						if game.Workspace:FindFirstChild("RoomESP_Att1") then game.Workspace:FindFirstChild("RoomESP_Att1"):Destroy(); end
 						if game.Workspace:FindFirstChild("RoomESP_Beam") then game.Workspace:FindFirstChild("RoomESP_Beam"):Destroy(); end
 					end)
-					-- Floating label ESP
 					RoomESP = CreateESP("Text", {
 						Text = "[Ghost Room] " .. LowestTempRoom.Name;
 						Parent = LowestTempRoom;
@@ -1707,41 +1636,26 @@ end)()
 						StudsOffset = Vector3.new(0, 5, 0);
 					});
 					RoomESP.Enable();
-					-- Beam line from player to ghost room
 					pcall(function()
 						local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart");
 						if not hrp then return; end
-						-- Clean up old
 						for _, v in pairs(game.Workspace.Terrain:GetChildren()) do
 							if v.Name == "RoomESP_Att1" or v.Name == "RoomESP_Beam" then v:Destroy(); end
 						end
 						if hrp:FindFirstChild("RoomESP_Att0") then hrp:FindFirstChild("RoomESP_Att0"):Destroy(); end
-						-- Create new
-						local att0 = Instance.new("Attachment");
-						att0.Name = "RoomESP_Att0";
-						att0.Parent = hrp;
-						local att1 = Instance.new("Attachment");
-						att1.Name = "RoomESP_Att1";
-						att1.WorldPosition = LowestTempRoom.Position;
-						att1.Parent = game.Workspace.Terrain;
+						local att0 = Instance.new("Attachment"); att0.Name = "RoomESP_Att0"; att0.Parent = hrp;
+						local att1 = Instance.new("Attachment"); att1.Name = "RoomESP_Att1"; att1.WorldPosition = LowestTempRoom.Position; att1.Parent = game.Workspace.Terrain;
 						local beam = Instance.new("Beam");
-						beam.Name = "RoomESP_Beam";
-						beam.Attachment0 = att0;
-						beam.Attachment1 = att1;
+						beam.Name = "RoomESP_Beam"; beam.Attachment0 = att0; beam.Attachment1 = att1;
 						beam.Color = ColorSequence.new(Color3.fromRGB(255, 140, 0));
-						beam.Width0 = 0.1;
-						beam.Width1 = 0.1;
-						beam.FaceCamera = true;
-						beam.LightEmission = 1;
-						beam.Transparency = NumberSequence.new(0.2);
+						beam.Width0 = 0.1; beam.Width1 = 0.1; beam.FaceCamera = true;
+						beam.LightEmission = 1; beam.Transparency = NumberSequence.new(0.2);
 						beam.Parent = game.Workspace.Terrain;
 					end)
 					CurrentHighlightedRoom = LowestTempRoom;
 				else
 					if RoomESP and RoomESP.ESP then
-						pcall(function()
-							RoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name;
-						end)
+						pcall(function() RoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name; end)
 					end
 				end
 			end
@@ -1947,9 +1861,6 @@ end)()
 	local heldDown = { ["UI"] = false; ["Freecam"] = false; }
 	local UpdaterThread = Utility:Thread("Updater", function()
 		while task.wait() do
-			Light.Brightness = tonumber(CustomLightBrightness.Text) or 0;
-			Light.Range = tonumber(CustomLightsRange.Text) or 0;
-
 			if CustomSprint.Enabled and Sprinting then LocalPlayer.Character:FindFirstChild("Humanoid").WalkSpeed = tonumber(CustomSprintSpeed.Text) or 13; end
 			if PlayerGui:FindFirstChild("Statusifier") then PlayerGui["Statusifier"]["Container"]["UIScale"].Scale = tonumber(SideStatusScale.Text) or 1; end
 		end
@@ -2043,7 +1954,7 @@ end)()
 	UserIS.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then return end
 		if input.KeyCode == Enum.KeyCode.LeftShift then Sprinting = true; end
-		if input.KeyCode == Enum.KeyCode.M and Freecam.Enabled then FreecamModule.ToggleFreecam(); end
+		if input.KeyCode == Enum.KeyCode.M and FreecamModule.Enabled then FreecamModule.ToggleFreecam(); end
 		if input.KeyCode == Enum.KeyCode.J then
 			heldDown["UI"] = true
 			task.spawn(function()
@@ -2079,7 +1990,7 @@ end)()
 		end)
 		PlayerGui["MobileUI"].Frame.JournalButton.MouseLeave:Connect(function() timeBetween["UI"] = 0; heldDown["UI"] = false; end)
 		PlayerGui["MobileUI"].FlashlightButton.MouseButton1Down:Connect(function()
-			if not Freecam.Enabled then return; end
+			if not FreecamModule.Enabled then return; end
 			heldDown["Freecam"] = true
 			task.spawn(function()
 				repeat task.wait(1); timeBetween["Freecam"] += 1; until timeBetween["Freecam"] == 2 or heldDown["Freecam"] == false;
@@ -2100,304 +2011,96 @@ local Webhook = {}
 local Embed = {}
 local Field = {}
 
------------------------
------ [ Webhook ] -----
------------------------
 do
 	Webhook.__index = Webhook
 	Webhook.__tostring = function(self)
 		local Data = {}
 		Data["content"] = self["content"]
-
 		if self["username"] ~= "" then Data["username"] = self["username"] end
 		if self["avatar_url"] ~= "" then Data["avatar_url"] = self["avatar_url"] end
 		if #self["embeds"] > 0 then
 			Data["embeds"] = {}
-			for i = 1, #self["embeds"] do
-				Data["embeds"][i] = HttpService:JSONDecode(tostring(self["embeds"][i]))
-			end
+			for i = 1, #self["embeds"] do Data["embeds"][i] = HttpService:JSONDecode(tostring(self["embeds"][i])) end
 		end
-
 		return HttpService:JSONEncode(Data)
 	end
 
 	function Webhook.new(content, username, avatar_url)
-		local Data = {
-			["avatar_url"] = avatar_url or "",
-			["username"] = username or "",
-			["content"] = content or "",
-			["embeds"] = {},
-		}
+		local Data = { ["avatar_url"] = avatar_url or ""; ["username"] = username or ""; ["content"] = content or ""; ["embeds"] = {}; }
 		return setmetatable(Data, Webhook)
 	end
 
-	-----------------------
-	----- [ Methods ] -----
-	-----------------------
-	function Webhook:Append(text)
-		local temp = self["content"] .. text
-		if #temp > 2000 then
-			warn('Message body cannot exceed 2000 characters')
-			return
-		end
-		self["content"] = temp
-	end
-
-	function Webhook:AppendLine(text)
-		self:Append(text .. "\n")
-	end
-
-	function Webhook:SetUsername(username)
-		self["username"] = username
-	end
-
-	function Webhook:SetAvatarUrl(url)
-		self["avatar_url"] = url
-	end
-
-	function Webhook:NewEmbed(...)
-		local embed = Embed.new(...)
-		self["embeds"][#self["embeds"]+1] = embed
-		return embed
-	end
-
-	function Webhook:CountEmbeds()
-		return #self["embeds"]
-	end
-
+	function Webhook:Append(text) local temp = self["content"] .. text; if #temp > 2000 then warn('Message body cannot exceed 2000 characters'); return end; self["content"] = temp end
+	function Webhook:AppendLine(text) self:Append(text .. "\n") end
+	function Webhook:SetUsername(username) self["username"] = username end
+	function Webhook:SetAvatarUrl(url) self["avatar_url"] = url end
+	function Webhook:NewEmbed(...) local embed = Embed.new(...); self["embeds"][#self["embeds"]+1] = embed; return embed end
+	function Webhook:CountEmbeds() return #self["embeds"] end
 	function Webhook:Send(discord_id, webhook_key, thread_id)
 		local headers = { ["content-type"] = "application/json" }
-		local url = ""
-
 		local url = "https://discord.com/api/webhooks/"..discord_id.."/"..webhook_key
 		if thread_id and thread_id ~= "" then url = url.."?"..thread_id end
-
 		local request = http_request or request or HttpPost or syn.request or http.request
-		local hook = { Url = url; Body = tostring(self); Method = "POST"; Headers = headers }
 		warn("Sending webhook notification...")
-		request(hook)
+		request({ Url = url; Body = tostring(self); Method = "POST"; Headers = headers })
 	end
 end
 
-----------------------
------ [ Embeds ] -----
-----------------------
 do
 	Embed.__index = Embed
 	Embed.__tostring = function(self)
 		local Data = {}
-
 		if self["title"] ~= "" then Data["title"] = self["title"] end
 		if self["description"] ~= "" then Data["description"] = self["description"] end
 		if Data["color"] ~= 0 then Data["color"] = self["color"] end
 		if self["url"] ~= "" then Data["url"] = self["url"] end
 		if self["timestamp"] ~= 0 then Data["timestamp"] = self["timestamp"] end
-		if self["footer"]["text"] ~= "" or self["footer"]["icon_url"] ~= "" then
-			Data["footer"] = {
-				["text"] = self["footer"]["text"];
-				["icon_url"] = self["footer"]["icon_url"];
-			}
-		end
-		if self["image"]  ~= "" then
-			Data["image"] = {
-				["url"] = self["image"]
-			}
-		end
-		if self["thumbnail"] ~= "" then
-			Data["thumbnail"] = {
-				["url"] = self["thumbnail"]
-			}
-		end
-		if self["author"]["name"] ~= "" then
-			Data["author"] = {
-				["name"] = self["author"]["name"],
-				["url"] = self["author"]["url"],
-				["icon_url"] = self["author"]["icon_url"]
-			}
-		end
+		if self["footer"]["text"] ~= "" or self["footer"]["icon_url"] ~= "" then Data["footer"] = { ["text"] = self["footer"]["text"]; ["icon_url"] = self["footer"]["icon_url"]; } end
+		if self["image"]  ~= "" then Data["image"] = { ["url"] = self["image"] } end
+		if self["thumbnail"] ~= "" then Data["thumbnail"] = { ["url"] = self["thumbnail"] } end
+		if self["author"]["name"] ~= "" then Data["author"] = { ["name"] = self["author"]["name"], ["url"] = self["author"]["url"], ["icon_url"] = self["author"]["icon_url"] } end
 		if #self["fields"] > 0 then
 			Data["fields"] = {}
-			for i = 1, #self["fields"] do
-				Data["fields"][i] = HttpService:JSONDecode(tostring(self["fields"][i]))
-			end
+			for i = 1, #self["fields"] do Data["fields"][i] = HttpService:JSONDecode(tostring(self["fields"][i])) end
 		end
-
 		return HttpService:JSONEncode(Data)
 	end
 
 	function Embed.new(title, description, url)
-		local Data = {
-			["title"] = title or "";
-			["description"] = description or "";
-			["url"] = url or "";
-			["timestamp"] = 0;
-			["color"] = 0;
-			["footer"] = { ["text"] = ""; ["icon_url"] = ""; };
-			["image"] = "";
-			["thumbnail"] = "";
-			["author"] = { ["name"] = ""; ["url"] = ""; ["icon_url"] = ""; };
-			["fields"] = {};
-		}
+		local Data = { ["title"]=title or ""; ["description"]=description or ""; ["url"]=url or ""; ["timestamp"]=0; ["color"]=0; ["footer"]={["text"]="";["icon_url"]=""}; ["image"]=""; ["thumbnail"]=""; ["author"]={["name"]="";["url"]="";["icon_url"]=""}; ["fields"]={}; }
 		return setmetatable(Data, Embed)
 	end
 
-	-----------------------
-	----- [ Methods ] -----
-	-----------------------
-	function Embed:SetTitle(title)
-		if #title > 256 then
-			warn('Title cannot exceed 256 characters')
-			return
-		end
-		self["title"] = title
-	end
-
-	function Embed:Append(text)
-		local temp = self["description"] .. text
-		if #temp > 2048 then
-			warn('Append description cannot exceed 2048 characters')
-			return
-		end
-		self["description"] = temp
-	end
-
-	function Embed:AppendLine(text)
-		self:Append(text .. "\n")
-	end
-
-	function Embed:SetURL(url)
-		self["url"] = url
-	end
-
-	function Embed:SetTimestamp(epoch)
-		if epoch == nil then epoch = tick() end
-		local temp = os.date('!*t', epoch)
-		self["timestamp"] = string.format("%d-%02d-%02dT%02d:%02d:%02dZ",
-			temp["year"],
-			temp["month"],
-			temp["day"],
-			temp["hour"],
-			temp["min"],
-			temp["sec"]
-		)
-	end
-
-	function Embed:SetColor(color)
-		if typeof(color) == "Color3" then
-			local value = bit32.lshift(math.floor(color["r"] * 255 + 0.5), 8)
-			value = bit32.lshift(math.floor(color["g"] * 255 + 0.5) + value, 8)
-			value = value + math.floor(color["b"] * 255 + 0.5)
-			self["color"] = value
-		elseif typeof(color) == "number" then
-			self["color"] = color
-		end
-	end
-
-	function Embed:AppendFooter(text)
-		local temp = self["footer"]["text"] .. text
-		if #temp > 2048 then
-			warn('Append footer cannot exceed 2048 characters')
-			return
-		end
-		self["footer"]["text"] = temp
-	end
-
-	function Embed:AppendFooterLine(text)
-		self:AppendFooter(text .. "\n")
-	end
-
-	function Embed:SetFooterIconURL(url)
-		self["footer"]["icon_url"] = url
-	end
-
-	function Embed:SetImageURL(url)
-		self["image"] = url
-	end
-
-	function Embed:SetThumbnailIconURL(url)
-		self["thumbnail"] = url
-	end
-
-	function Embed:SetAuthorName(name)
-		if #name > 256 then
-			warn('Author name cannot exceed 256 characters')
-		end
-		self["author"]["name"] = name
-	end
-
-	function Embed:SetAuthorURL(url)
-		self["author"]["url"] = url
-	end
-
-	function Embed:SetAuthorIconURL(url)
-		self["author"]["icon_url"] = url
-	end
-
-	function Embed:NewField(...)
-		local field = Field.new(...)
-		self["fields"][#self["fields"]+1] = field
-		return field
-	end
-
-	function Embed:CountFields()
-		return #self["fields"]
-	end
-
+	function Embed:SetTitle(title) if #title > 256 then warn('Title cannot exceed 256 characters'); return end; self["title"] = title end
+	function Embed:Append(text) local temp = self["description"] .. text; if #temp > 2048 then warn('Append description cannot exceed 2048 characters'); return end; self["description"] = temp end
+	function Embed:AppendLine(text) self:Append(text .. "\n") end
+	function Embed:SetURL(url) self["url"] = url end
+	function Embed:SetTimestamp(epoch) if epoch == nil then epoch = tick() end; local temp = os.date('!*t', epoch); self["timestamp"] = string.format("%d-%02d-%02dT%02d:%02d:%02dZ", temp["year"], temp["month"], temp["day"], temp["hour"], temp["min"], temp["sec"]) end
+	function Embed:SetColor(color) if typeof(color) == "Color3" then local value = bit32.lshift(math.floor(color["r"]*255+0.5),8); value = bit32.lshift(math.floor(color["g"]*255+0.5)+value,8); value = value+math.floor(color["b"]*255+0.5); self["color"] = value elseif typeof(color) == "number" then self["color"] = color end end
+	function Embed:AppendFooter(text) local temp = self["footer"]["text"] .. text; if #temp > 2048 then warn('Append footer cannot exceed 2048 characters'); return end; self["footer"]["text"] = temp end
+	function Embed:AppendFooterLine(text) self:AppendFooter(text .. "\n") end
+	function Embed:SetFooterIconURL(url) self["footer"]["icon_url"] = url end
+	function Embed:SetImageURL(url) self["image"] = url end
+	function Embed:SetThumbnailIconURL(url) self["thumbnail"] = url end
+	function Embed:SetAuthorName(name) if #name > 256 then warn('Author name cannot exceed 256 characters') end; self["author"]["name"] = name end
+	function Embed:SetAuthorURL(url) self["author"]["url"] = url end
+	function Embed:SetAuthorIconURL(url) self["author"]["icon_url"] = url end
+	function Embed:NewField(...) local field = Field.new(...); self["fields"][#self["fields"]+1] = field; return field end
+	function Embed:CountFields() return #self["fields"] end
 end
 
----------------------
------ [ Field ] -----
----------------------
 do
 	Field.__index = Field
-	Field.__tostring = function(self)
-		return HttpService:JSONEncode({
-			["name"] = self["name"];
-			["value"] = self["value"];
-			["inline"] = self["inline"];
-		})
-	end
-
-	function Field.new(name, value, inline)
-		local Data = {
-			["name"] = name or "";
-			["value"] = value or "";
-			["inline"] = inline or false;
-		}
-		return setmetatable(Data, Field)
-	end
-
-	-----------------------
-	----- [ Methods ] -----
-	-----------------------
-	function Field:SetName(name)
-		if #name > 256 then
-			warn('Name must not exceed 256 characters')
-			return
-		end
-		self["name"] = name
-	end
-
-	function Field:Append(text)
-		local temp = self["value"] .. text
-		if #temp > 1024 then
-			warn('Field content cannot exceed 1024 characters')
-			return
-		end
-		self["value"] = temp
-	end
-
-	function Field:AppendLine(text)
-		self:Append(text .. "\n")
-	end
-
-	function Field:SetIsInLine(inline)
-		self["inline"] = inline
-	end
-
+	Field.__tostring = function(self) return HttpService:JSONEncode({ ["name"]=self["name"]; ["value"]=self["value"]; ["inline"]=self["inline"]; }) end
+	function Field.new(name, value, inline) local Data = { ["name"]=name or ""; ["value"]=value or ""; ["inline"]=inline or false; }; return setmetatable(Data, Field) end
+	function Field:SetName(name) if #name > 256 then warn('Name must not exceed 256 characters'); return end; self["name"] = name end
+	function Field:Append(text) local temp = self["value"] .. text; if #temp > 1024 then warn('Field content cannot exceed 1024 characters'); return end; self["value"] = temp end
+	function Field:AppendLine(text) self:Append(text .. "\n") end
+	function Field:SetIsInLine(inline) self["inline"] = inline end
 end
 return Webhook
 end)()
+
 local Webhook = WebhookModule.new();
 local Embed = Webhook:NewEmbed(game.Players.LocalPlayer.Name.." ("..game.Players.LocalPlayer.UserId..")");
 if Success then
