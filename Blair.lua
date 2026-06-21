@@ -1548,17 +1548,57 @@ end)()
 				CursedObjectESP = CreateESP("Text", { Text = Display; Parent = Parent; Color = Color3.fromRGB(215, 252, 0); });
 				if Config["ESP"] and table.find(Config["ESPList"], "Cursed Object") then CursedObjectESP:Enable(); else CursedObjectESP:Disable(); end
 			end
-			if game.Workspace:WaitForChild("SummoningCircle", 2) then Objects.AddInfo("Summoning Circle"); AddCursedESP("[Summoning Circle]", game.Workspace["SummoningCircle"]); end
-			if game.Workspace:WaitForChild("Spirit Board", 2) then Objects.AddInfo("Spirit Board"); AddCursedESP("[Spirit Board]", game.Workspace["Spirit Board"]); end
-			if game.Workspace["Map"]["Items"]:WaitForChild("Tarot Cards", 2) then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", game.Workspace["Map"]["Items"]["Tarot Cards"]); end
-			for _, Player in pairs(Players:GetChildren()) do
-				if Player.Backpack:FindFirstChild("Tarot Cards") then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", Player.Backpack["Tarot Cards"]); break; end
-				if Player.Character and Player.Character:FindFirstChild("Tarot Cards") then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", Player.Character["Tarot Cards"]); break; end
+			local function FindCursedInPlayers(Name)
+				for _, Player in pairs(Players:GetChildren()) do
+					if Player.Backpack:FindFirstChild(Name) then return Player.Backpack:FindFirstChild(Name); end
+					if Player.Character and Player.Character:FindFirstChild(Name) then return Player.Character:FindFirstChild(Name); end
+				end
+				return nil;
 			end
-			if game.Workspace["Map"]["Items"]:WaitForChild("Music Box", 2) then Objects.AddInfo("Music Box"); AddCursedESP("[Music Box]", game.Workspace["Map"]["Items"]["Music Box"]); end
+			local function TryFind(Name, Parent, WaitTime)
+				-- Try WaitForChild first
+				local found = Parent:WaitForChild(Name, WaitTime or 10);
+				if found then return found; end
+				-- Try finding in players
+				return FindCursedInPlayers(Name);
+			end
+
+			-- Summoning Circle
+			local SummoningCircle = game.Workspace:WaitForChild("SummoningCircle", 10);
+			if SummoningCircle then Objects.AddInfo("Summoning Circle"); AddCursedESP("[Summoning Circle]", SummoningCircle); end
+
+			-- Spirit Board
+			local SpiritBoard = game.Workspace:WaitForChild("Spirit Board", 10);
+			if SpiritBoard then Objects.AddInfo("Spirit Board"); AddCursedESP("[Spirit Board]", SpiritBoard); end
+
+			-- Tarot Cards
+			local TarotCards = TryFind("Tarot Cards", game.Workspace["Map"]["Items"], 10) or FindCursedInPlayers("Tarot Cards");
+			if TarotCards then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", TarotCards); end
+
+			-- Music Box
+			local MusicBox = TryFind("Music Box", game.Workspace["Map"]["Items"], 10) or FindCursedInPlayers("Music Box");
+			if MusicBox then Objects.AddInfo("Music Box"); AddCursedESP("[Music Box]", MusicBox); end
+
+			-- Watch for cursed objects spawning/moving after script loads
+			game.Workspace.ChildAdded:Connect(function(child)
+				if child.Name == "SummoningCircle" then Objects.AddInfo("Summoning Circle"); AddCursedESP("[Summoning Circle]", child); end
+				if child.Name == "Spirit Board" then Objects.AddInfo("Spirit Board"); AddCursedESP("[Spirit Board]", child); end
+			end)
+			game.Workspace["Map"]["Items"].ChildAdded:Connect(function(child)
+				if child.Name == "Tarot Cards" then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", child); end
+				if child.Name == "Music Box" then Objects.AddInfo("Music Box"); AddCursedESP("[Music Box]", child); end
+			end)
 			for _, Player in pairs(Players:GetChildren()) do
-				if Player.Backpack:FindFirstChild("Music Box") then Objects.AddInfo("Music Box"); AddCursedESP("[Music Box]", Player.Backpack["Music Box"]); break; end
-				if Player.Character and Player.Character:FindFirstChild("Music Box") then Objects.AddInfo("Music Box"); AddCursedESP("[Music Box]", Player.Character["Music Box"]); break; end
+				Player.CharacterAdded:Connect(function(char)
+					char.ChildAdded:Connect(function(child)
+						if child.Name == "Tarot Cards" then AddCursedESP("[Tarot Cards]", child); end
+						if child.Name == "Music Box" then AddCursedESP("[Music Box]", child); end
+					end)
+				end)
+				Player.Backpack.ChildAdded:Connect(function(child)
+					if child.Name == "Tarot Cards" then AddCursedESP("[Tarot Cards]", child); end
+					if child.Name == "Music Box" then AddCursedESP("[Music Box]", child); end
+				end)
 			end
 		end)
 	end)
@@ -1594,8 +1634,8 @@ end)()
 				local tempWhole = math.floor(tempInt / 100);
 				local tempDec = math.abs(tempInt) % 100;
 				local tempStr = tostring(tempWhole) .. "." .. (tempDec < 10 and "0" .. tostring(tempDec) or tostring(tempDec));
-				RoomName.Text = LowestTempRoom.Name;
-				RoomTemp.Text = tempStr .. "°C";
+				RoomName.Text = "Room: " .. LowestTempRoom.Name;
+				RoomTemp.Text = "Temp: " .. tempStr .. "°C";
 				LowestTemp = LowestTempRoom;
 
 				if CurrentHighlightedRoom ~= LowestTempRoom then
@@ -1611,7 +1651,7 @@ end)()
 						Text = "[Ghost Room] " .. LowestTempRoom.Name;
 						Parent = LowestTempRoom;
 						Distance = LowestTempRoom;
-						Color = Color3.fromRGB(0, 170, 255);
+						Color = Color3.fromRGB(255, 140, 0);
 						Size = UDim2.new(8, 0, 2, 0);
 						StudsOffset = Vector3.new(0, 5, 0);
 					});
@@ -1637,7 +1677,7 @@ end)()
 						beam.Name = "RoomESP_Beam";
 						beam.Attachment0 = att0;
 						beam.Attachment1 = att1;
-						beam.Color = ColorSequence.new(Color3.fromRGB(0, 170, 255));
+						beam.Color = ColorSequence.new(Color3.fromRGB(255, 140, 0));
 						beam.Width0 = 0.1;
 						beam.Width1 = 0.1;
 						beam.FaceCamera = true;
