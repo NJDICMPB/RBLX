@@ -1367,19 +1367,7 @@ return Freecam
 end)()
 	FreecamModule.IgnoreGUI = {"Radio", "Journal", "MobileUI", "Statusifier"}
 
-	local Light;
-	if LocalPlayer.Character:FindFirstChild("HumanoidRootPart"):FindFirstChild("SpotLight") then
-		Light = LocalPlayer.Character:FindFirstChild("HumanoidRootPart"):FindFirstChild("SpotLight")
-	else
-		Light = Utility:Instance("SpotLight", {
-			Parent = LocalPlayer.Character:FindFirstChild("HumanoidRootPart");
-			Brightness = 10;
-			Range = 60;
-			Face = Enum.NormalId.Front;
-			Angle = 120;
-			Shadows = false;
-		});
-	end
+
 
 	local Sprinting = false
 
@@ -1465,30 +1453,12 @@ end)()
 	--------------------------
 	-- [[ USER INTERFACE ]] --
 	--------------------------
-	local CustomLights = CreateSettings("Custom Lights", { Config = "CustomLight"; Keybind = Enum.KeyCode.R; }, {
-		On = function() Light.Enabled = true end;
-		Off = function() Light.Enabled = false end;
-	});
-	local CustomLightsRange = CustomLights:AddTextbox({
-		Position = UDim2.new(0.25, 0, 0, -2);
-		Size = UDim2.new(0.4, 0, 0.8, 0);
-		Text = "60";
-	}, { Config = "CustomLightRange"; Display = "Range"; Type = "Integer"; });
-	local CustomLightBrightness = CustomLights:AddTextbox({
-		Position = UDim2.new(0.75, 0, 0, -2);
-		Size = UDim2.new(0.4, 0, 0.8, 0);
-		Text = "10";
-	}, { Config = "CustomLightBrightness"; Display = "Brightness"; Type = "Integer"; });
-
 	local CustomSprint = CreateSettings("Custom Sprint", { Config = "CustomSprint"; });
 	local CustomSprintSpeed = CustomSprint:AddTextbox({ Text = "13"; }, { Config = "CustomSprintSpeed"; Display = "Speed"; Type = "Number"; });
 
-	local FullbrightAmbient;
 	local Fullbright = CreateSettings("Fullbright", { Config = "Fullbright"; Keybind = Enum.KeyCode.T; }, {
 		On = function()
-			if FullbrightAmbient and FullbrightAmbient.Text ~= "" then Lighting.Ambient = Color3.fromRGB(tonumber(FullbrightAmbient.Text), tonumber(FullbrightAmbient.Text), tonumber(FullbrightAmbient.Text));
-			elseif Config["FullbrightAmbient"] then Lighting.Ambient = Color3.fromRGB(tonumber(Config["FullbrightAmbient"]), tonumber(Config["FullbrightAmbient"]), tonumber(Config["FullbrightAmbient"]));
-			else Lighting.Ambient = Color3.fromRGB(138, 138, 138); end
+			Lighting.Ambient = Color3.fromRGB(255, 255, 255);
 			Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128);
 			Lighting.Brightness = 2;
 			Lighting["Atmosphere"].Density = 0
@@ -1498,7 +1468,6 @@ end)()
 			Lighting["Atmosphere"].Density = AtmosphereDensity
 		end;
 	});
-	FullbrightAmbient = Fullbright:AddTextbox({ Text = "138"; }, { Config = "FullbrightAmbient"; Display = "Ambient"; Type = "Integer"; });
 
 	local NoClipDoor = CreateSettings("No Clip Door", { Config = "NoClipDoor"; Keybind = Enum.KeyCode.X; }, {
 		On = function()
@@ -1513,7 +1482,7 @@ end)()
 		end;
 	});
 	
-	local List =  Utility:CombineTable({"Ghost","BooBoo Doll","Generator","Players","Cursed Object","Backpack"}, Utility:GetTableKeys(BlairData["Items"]));
+	local List =  Utility:CombineTable({"Ghost","Ghost Room","BooBoo Doll","Generator","Players","Cursed Object","Backpack"}, Utility:GetTableKeys(BlairData["Items"]));
 	local ESP = CreateSettings("ESP", { Config = "ESP"; });
 	local ESPList = ESP:AddDropdrown({}, {
 		Config = "ESPList";
@@ -1530,8 +1499,6 @@ end)()
 		end;
 	});
 	
-	local Freecam = CreateSettings("Freecam", { Config = "Freecam"; });
-
 	local SideStatus = CreateSettings("Side Status", { Config = "SideStatus"; }, {
 		On = function() PlayerGui["Statusifier"].Enabled = true; end;
 		Off = function() PlayerGui["Statusifier"].Enabled = false; end;
@@ -1615,7 +1582,7 @@ end)()
 	local RoomDoor = Room.AddInfo("Door Interact"); RoomDoor.Visible = false;
 	local RoomManifest = Room.AddInfo("Manifest"); RoomManifest.Visible = false;
 	local RoomThread = Utility:Thread("Room", function()
-		local RoomESP = nil;
+		_G.BlairRoomESP = nil;
 		local CurrentHighlightedRoom = nil;
 		while task.wait() do
 			local LowestTempRoom = nil;
@@ -1639,7 +1606,7 @@ end)()
 				LowestTemp = LowestTempRoom;
 
 				if CurrentHighlightedRoom ~= LowestTempRoom then
-					if RoomESP then RoomESP.Destroy(); end
+					if _G.BlairRoomESP then _G.BlairRoomESP.Destroy(); end
 					-- Destroy old beam attachments
 					pcall(function()
 						if LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0") then LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0"):Destroy(); end
@@ -1647,7 +1614,7 @@ end)()
 						if game.Workspace:FindFirstChild("RoomESP_Beam") then game.Workspace:FindFirstChild("RoomESP_Beam"):Destroy(); end
 					end)
 					-- Floating label ESP
-					RoomESP = CreateESP("Text", {
+					_G.BlairRoomESP = CreateESP("Text", {
 						Text = "[Ghost Room] " .. LowestTempRoom.Name;
 						Parent = LowestTempRoom;
 						Distance = LowestTempRoom;
@@ -1655,7 +1622,7 @@ end)()
 						Size = UDim2.new(8, 0, 2, 0);
 						StudsOffset = Vector3.new(0, 5, 0);
 					});
-					RoomESP.Enable();
+					-- visibility controlled by ESP thread
 					-- Beam line from player to ghost room
 					pcall(function()
 						local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart");
@@ -1687,9 +1654,9 @@ end)()
 					end)
 					CurrentHighlightedRoom = LowestTempRoom;
 				else
-					if RoomESP and RoomESP.ESP then
+					if _G.BlairRoomESP and _G.BlairRoomESP.ESP then
 						pcall(function()
-							RoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name;
+							_G.BlairRoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name;
 						end)
 					end
 				end
@@ -1898,13 +1865,10 @@ end)()
 	------------------
 	-- [[ EVENTS ]] --
 	------------------
-	local timeBetween = { ["UI"] = 0; ["Freecam"] = 0; }
-	local heldDown = { ["UI"] = false; ["Freecam"] = false; }
+	local timeBetween = { ["UI"] = 0; }
+	local heldDown = { ["UI"] = false; }
 	local UpdaterThread = Utility:Thread("Updater", function()
 		while task.wait() do
-			Light.Brightness = tonumber(CustomLightBrightness.Text) or 0;
-			Light.Range = tonumber(CustomLightsRange.Text) or 0;
-
 			if CustomSprint.Enabled and Sprinting then LocalPlayer.Character:FindFirstChild("Humanoid").WalkSpeed = tonumber(CustomSprintSpeed.Text) or 13; end
 			if PlayerGui:FindFirstChild("Statusifier") then PlayerGui["Statusifier"]["Container"]["UIScale"].Scale = tonumber(SideStatusScale.Text) or 1; end
 		end
@@ -1934,6 +1898,17 @@ end)()
 				if GhostESP["Highlight"] then GhostESP["Highlight"]:Disable(); end
 			end
 			if CursedObjectESP then if Config["ESP"] and table.find(Config["ESPList"], "Cursed Object") then CursedObjectESP:Enable(); else CursedObjectESP:Disable(); end end
+			-- Ghost Room ESP + beam controlled by ESP list
+			do
+				local ghostRoomOn = Config["ESP"] and table.find(Config["ESPList"], "Ghost Room")
+				if _G.BlairRoomESP then
+					if ghostRoomOn then _G.BlairRoomESP.Enable() else _G.BlairRoomESP.Disable() end
+				end
+				pcall(function()
+					local beam = game.Workspace.Terrain:FindFirstChild("RoomESP_Beam")
+					if beam then beam.Enabled = ghostRoomOn and true or false end
+				end)
+			end
 			for _, pESP in pairs(PlayerESP) do
 				if pESP["Player"] == nil then continue; end
 				if Config["ESP"] and table.find(Config["ESPList"], "Players") then pESP["ESP"]:Enable(); else pESP["ESP"]:Disable(); end
@@ -1998,7 +1973,6 @@ end)()
 	UserIS.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then return end
 		if input.KeyCode == Enum.KeyCode.LeftShift then Sprinting = true; end
-		if input.KeyCode == Enum.KeyCode.M and Freecam.Enabled then FreecamModule.ToggleFreecam(); end
 		if input.KeyCode == Enum.KeyCode.J then
 			heldDown["UI"] = true
 			task.spawn(function()
@@ -2033,17 +2007,7 @@ end)()
 			end)
 		end)
 		PlayerGui["MobileUI"].Frame.JournalButton.MouseLeave:Connect(function() timeBetween["UI"] = 0; heldDown["UI"] = false; end)
-		PlayerGui["MobileUI"].FlashlightButton.MouseButton1Down:Connect(function()
-			if not Freecam.Enabled then return; end
-			heldDown["Freecam"] = true
-			task.spawn(function()
-				repeat task.wait(1); timeBetween["Freecam"] += 1; until timeBetween["Freecam"] == 2 or heldDown["Freecam"] == false;
-				if timeBetween["Freecam"] ~= 2 then timeBetween["Freecam"] = 0; return; end
-				timeBetween["Freecam"] = 0;
-				FreecamModule.ToggleFreecam()
-			end)
-		end)
-		PlayerGui["MobileUI"].FlashlightButton.MouseLeave:Connect(function() timeBetween["Freecam"] = 0; heldDown["Freecam"] = false; end)
+
 	end
 
 	print("Loaded Blair Script!");
