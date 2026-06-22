@@ -1,6 +1,6 @@
 --[[
     ╔═════════════════════════════════════════════════════════════╗
-    ║                       CristineHakdog                        ║
+    ║                     I Love You Cristine                     ║
     ║                       Blair - Roblox                        ║
     ║                                                             ║
     ║  Features:                                                  ║
@@ -29,9 +29,9 @@ local LocalPlayer = Players.LocalPlayer;
 local PlayerGui = LocalPlayer.PlayerGui;
 local Mouse = LocalPlayer:GetMouse();
 
-if game.PlaceId == 6137321701 then StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "No Loading in Lobby!"; }); return; end
+if game.PlaceId == 6137321701 then StarterGui:SetCore("SendNotification", { Title = "I Love You Cristine"; Text = "No Loading in Lobby!"; }); return; end
 
-StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "Loading Blair Script!"; });
+StarterGui:SetCore("SendNotification", { Title = "I Love You Cristine"; Text = "Loading Blair Script!"; });
 local Success, Result = pcall(function()
 	print("Loading Blair Script!");
 	repeat task.wait(.1) until game.Workspace:FindFirstChild(LocalPlayer.Name);
@@ -2353,12 +2353,12 @@ if Success then
 	Embed:Append("Success Execution");
 	Embed:SetColor(Color3.fromRGB(0, 255, 0));
 	Embed:SetTimestamp(os.time());
-	StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "Successfully Loaded Script!"; });
+	StarterGui:SetCore("SendNotification", { Title = "I Love You Cristine"; Text = "Successfully Loaded Script!"; });
 else
 	Embed:AppendLine("Error Execution");
 	Embed:Append(Result);
 	Embed:SetColor(Color3.fromRGB(255, 0, 0));
 	Embed:SetTimestamp(os.time());
-	StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "Error Loading Script!"; });
+	StarterGui:SetCore("SendNotification", { Title = "I Love You Cristine"; Text = "Error Loading Script!"; });
 	error(Result);
 end
