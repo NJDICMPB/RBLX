@@ -355,7 +355,7 @@ end)()
 			local Keybind = Options and Options.Keybind or nil;
 			local On = Callback and Callback.On or function() end;
 			local Off = Callback and Callback.Off or function() end;
-			
+
 			local Settings;
 			if PlayerGui.Journal.Background:FindFirstChild("Settings") then
 				Settings = PlayerGui.Journal.Background:FindFirstChild("Settings");
@@ -364,14 +364,19 @@ end)()
 					Name = "Settings";
 					Parent = PlayerGui.Journal.Background;
 					AnchorPoint = Vector2.new(0, 1);
-					BackgroundTransparency = 1;
-					Size = UDim2.new(1, 0, 0.04, 0);
+					BackgroundColor3 = Color3.fromRGB(10, 5, 5);
+					BackgroundTransparency = 0.15;
+					BorderSizePixel = 0;
+					Size = UDim2.new(1, 0, 0, 38);
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 8); });
+					Utility:Instance("UIStroke", { Color = Color3.fromRGB(120, 20, 20); Thickness = 1.5; });
 					Utility:Instance("UIListLayout", {
-						Padding = UDim.new(0, 10);
+						Padding = UDim.new(0, 4);
 						FillDirection = Enum.FillDirection.Horizontal;
 						HorizontalAlignment = Enum.HorizontalAlignment.Center;
 						VerticalAlignment = Enum.VerticalAlignment.Center;
 					});
+					Utility:Instance("UIPadding", { PaddingLeft = UDim.new(0, 4); PaddingRight = UDim.new(0, 4); });
 				});
 			end
 
@@ -379,29 +384,37 @@ end)()
 			Data.Button = Utility:Instance("TextButton", {
 				Name = Name;
 				Parent = Settings;
-				BackgroundColor3 = Color3.fromRGB(0,0);
-				BackgroundTransparency = 0.25;
+				BackgroundColor3 = Color3.fromRGB(25, 10, 10);
+				BackgroundTransparency = 0;
 				BorderSizePixel = 0;
-				Size = UDim2.new(0.10, 0, 1, 0);
+				Size = UDim2.new(0.10, 0, 1, -8);
 				Text = "";
+				Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
+				Utility:Instance("UIStroke", { Color = Color3.fromRGB(80, 15, 15); Thickness = 1; });
 				Utility:Instance("TextLabel", {
+					Name = "Label";
 					AnchorPoint = Vector2.new(0.5, 0.5);
 					BackgroundTransparency = 1;
-					Position = UDim2.new(0.5, 0, 0.5, 0);
-					Size = UDim2.new(0.9, 0, 0.7, 0);
+					Position = UDim2.new(0.5, 0, 0.42, 0);
+					Size = UDim2.new(0.92, 0, 0.55, 0);
 					Font = Enum.Font.FredokaOne;
 					Text = Name;
-					TextColor3 = Color3.fromRGB(255, 255, 255);
+					TextColor3 = Color3.fromRGB(220, 200, 200);
 					TextScaled = true;
+					TextStrokeTransparency = 0.6;
+					TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
 				});
 				Utility:Instance("Frame", {
-					BackgroundColor3 = Data.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0);
+					Name = "Toggle";
+					AnchorPoint = Vector2.new(0.5, 1);
+					BackgroundColor3 = Data.Enabled and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(50, 50, 50);
 					BorderSizePixel = 0;
-					Position = UDim2.new(0, 0, 1, 0);
-					Size = UDim2.new(1, 0, 0, 2);
+					Position = UDim2.new(0.5, 0, 1, -2);
+					Size = UDim2.new(0.65, 0, 0, 2);
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(1, 0); });
 				});
 			});
-			Data.Toggle = Data.Button["Frame"];
+			Data.Toggle = Data.Button["Toggle"];
 			
 			function Data:AddTextbox(Properties, Options)
 				Properties.Text = Options and Config[Options.Config] or Properties.Text or "";
@@ -410,27 +423,27 @@ end)()
 				local Negative = Options and Options.Negative or false;
 				local Control = Utility:Instance("TextBox", {
 					Parent = Data.Button;
-					AnchorPoint = Vector2.new(0.5, 1);
-					BackgroundColor3 = Color3.fromRGB(0, 0, 0);
-					BackgroundTransparency = 0.25;
+					AnchorPoint = Vector2.new(0.5, 0.5);
+					BackgroundColor3 = Color3.fromRGB(15, 5, 5);
+					BackgroundTransparency = 0;
 					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 0, -2);
-					Size = UDim2.new(0.8, 0, 0.8, 0);
-					Font = Enum.Font.SourceSansBold;
-					TextColor3 = Color3.fromRGB(255, 255, 255);
+					Position = UDim2.new(0.5, 0, 0.28, 0);
+					Size = UDim2.new(0.85, 0, 0.38, 0);
+					Font = Enum.Font.FredokaOne;
+					TextColor3 = Color3.fromRGB(220, 200, 200);
 					TextScaled = true;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 5); });
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
+					Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 20, 20); Thickness = 1; });
 					Utility:Instance("TextLabel", {
-						AnchorPoint = Vector2.new(0.5, 0.5);
+						AnchorPoint = Vector2.new(0.5, 1);
 						BackgroundTransparency = 1;
-						Position = UDim2.new(0.5, 0, -0.1, 0);
-						Size = UDim2.new(0.9, 0, 0.6, 0);
+						Position = UDim2.new(0.5, 0, 0, 0);
+						Size = UDim2.new(1, 0, 0.9, 0);
 						Font = Enum.Font.FredokaOne;
 						Text = Display;
-						TextColor3 = Color3.fromRGB(255, 255, 255);
+						TextColor3 = Color3.fromRGB(160, 130, 130);
 						TextScaled = true;
-						TextStrokeTransparency = 0;
-						TextXAlignment = Enum.TextXAlignment.Left;
+						TextXAlignment = Enum.TextXAlignment.Center;
 					});
 				});
 				for Index, Value in pairs(Properties or {}) do
@@ -461,78 +474,93 @@ end)()
 				Control.Button = Utility:Instance("TextButton", {
 					Parent = Data.Button;
 					AnchorPoint = Vector2.new(0.5, 1);
-					BackgroundColor3 = Color3.fromRGB(0, 0, 0);
-					BackgroundTransparency = 0.25;
+					BackgroundColor3 = Color3.fromRGB(15, 5, 5);
+					BackgroundTransparency = 0;
 					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 0, -2);
-					Size = UDim2.new(0.8, 0, 0.8, 0);
-					Font = Enum.Font.SourceSansBold;
-					Text = "Open List";
-					TextColor3 = Color3.fromRGB(255, 255, 255);
+					Position = UDim2.new(0.5, 0, 0, -4);
+					Size = UDim2.new(0.85, 0, 0.42, 0);
+					Font = Enum.Font.FredokaOne;
+					Text = "☰ ESP List";
+					TextColor3 = Color3.fromRGB(220, 200, 200);
 					TextScaled = true;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 5); });
+					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
+					Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 20, 20); Thickness = 1; });
 				});
 				for Index, Value in pairs(Properties or {}) do
 					if Control.Button[Index] then Control.Button[Index] = Value; end
 				end;
+				-- Dropdown opens as a full-width overlay above the settings bar
 				Control.Scroll = Utility:Instance("Frame", {
-					Parent = Data.Button;
-					AnchorPoint = Vector2.new(0.5, 0);
-					BackgroundColor3 = Color3.fromRGB(0, 0, 0);
-					BackgroundTransparency = 0.25;
+					Parent = PlayerGui.Journal.Background;
+					AnchorPoint = Vector2.new(0, 1);
+					BackgroundColor3 = Color3.fromRGB(10, 5, 5);
+					BackgroundTransparency = 0;
 					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 0, 0);
-					Size = UDim2.new(1.1, 0, 10, 0);
+					Position = UDim2.new(0, 0, 0, -4);
+					Size = UDim2.new(1, 0, 0, 220);
 					Visible = false;
-					ZIndex = 2;
+					ZIndex = 5;
 					ClipsDescendants = true;
 					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 10); });
-					Utility:Instance("ScrollingFrame", {
-						AnchorPoint = Vector2.new(0.5, 0.5);
-						BackgroundColor3 = Color3.fromRGB(0, 0, 0);
+					Utility:Instance("UIStroke", { Color = Color3.fromRGB(120, 20, 20); Thickness = 1.5; });
+					Utility:Instance("TextLabel", {
 						BackgroundTransparency = 1;
-						Position = UDim2.new(0.5, 0, 0.5, 0);
-						Size = UDim2.new(1, 0, 0.96, 0);
-						ZIndex = 2;
+						Size = UDim2.new(1, 0, 0, 28);
+						Font = Enum.Font.FredokaOne;
+						Text = "— SELECT ESP TARGETS —";
+						TextColor3 = Color3.fromRGB(180, 50, 50);
+						TextScaled = true;
+						ZIndex = 5;
+					});
+					Utility:Instance("ScrollingFrame", {
+						AnchorPoint = Vector2.new(0.5, 1);
+						BackgroundTransparency = 1;
+						Position = UDim2.new(0.5, 0, 1, -4);
+						Size = UDim2.new(0.97, 0, 1, -32);
+						ZIndex = 5;
 						AutomaticCanvasSize = Enum.AutomaticSize.Y;
 						CanvasSize = UDim2.new(0, 0, 0, 0);
-						ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255);
-						ScrollBarThickness = 5;
-						Utility:Instance("UIListLayout", { Padding = UDim.new(0, 3); HorizontalAlignment = Enum.HorizontalAlignment.Center; });
-						Utility:Instance("UIPadding", { PaddingLeft = UDim.new(0.06, 0); PaddingRight = UDim.new(0.06, 0); });
+						ScrollBarImageColor3 = Color3.fromRGB(180, 50, 50);
+						ScrollBarThickness = 4;
+						Utility:Instance("UIGridLayout", {
+							CellSize = UDim2.new(0.3, -4, 0, 36);
+							CellPadding = UDim2.new(0, 4, 0, 4);
+							SortOrder = Enum.SortOrder.LayoutOrder;
+						});
+						Utility:Instance("UIPadding", { PaddingLeft = UDim.new(0, 4); PaddingRight = UDim.new(0, 4); PaddingTop = UDim.new(0, 2); });
 					})
 				});
 				for _, Item in pairs(List) do
 					local Button = Utility:Instance("TextButton", {
 						Name = Item;
 						Parent = Control.Scroll["ScrollingFrame"];
-						BackgroundColor3 = Color3.fromRGB(40, 40, 40);
-						Size = UDim2.new(1, 0, 0.1, 0);
-						Text = "";
-						ZIndex = 2;
-						Utility:Instance("UICorner", { CornerRadius = UDim.new(1, 0); });
-						Utility:Instance("TextLabel", {
-							AnchorPoint = Vector2.new(0.5, 0.5);
-							BackgroundTransparency = 1;
-							Position = UDim2.new(0.5, 0, 0.5, 0);
-							Size = UDim2.new(0.9, 0, 0.9, 0);
-							ZIndex = 2;
-							Font = Enum.Font.SourceSansBold;
-							Text = Item;
-							TextColor3 = Color3.fromRGB(255, 255, 255);
-							TextScaled = true;
-						});
+						BackgroundColor3 = Color3.fromRGB(30, 10, 10);
+						Size = UDim2.new(0, 0, 0, 0);
+						Text = Item;
+						Font = Enum.Font.FredokaOne;
+						TextColor3 = Color3.fromRGB(200, 180, 180);
+						TextScaled = true;
+						ZIndex = 6;
+						Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
+						Utility:Instance("UIStroke", { Color = Color3.fromRGB(80, 15, 15); Thickness = 1; ZIndex = 6; });
 					});
-					if table.find(Control.Selected, Item) then Button.BackgroundColor3 = Color3.fromRGB(0, 211, 0);
-					else Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40); end
+					if table.find(Control.Selected, Item) then
+						Button.BackgroundColor3 = Color3.fromRGB(120, 10, 10);
+						Button["UIStroke"].Color = Color3.fromRGB(200, 30, 30);
+					else
+						Button.BackgroundColor3 = Color3.fromRGB(30, 10, 10);
+						Button["UIStroke"].Color = Color3.fromRGB(80, 15, 15);
+					end
 
 					Button.MouseButton1Down:Connect(function()
 						if table.find(Control.Selected, Item) then
 							table.remove(Control.Selected, table.find(Control.Selected, Item));
-							Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40);
+							Button.BackgroundColor3 = Color3.fromRGB(30, 10, 10);
+							Button["UIStroke"].Color = Color3.fromRGB(80, 15, 15);
 						else
 							table.insert(Control.Selected, Item);
-							Button.BackgroundColor3 = Color3.fromRGB(0, 211, 0);
+							Button.BackgroundColor3 = Color3.fromRGB(120, 10, 10);
+							Button["UIStroke"].Color = Color3.fromRGB(200, 30, 30);
 						end
 						if Options.Config then
 							Config[Options.Config] = Control.Selected;
@@ -544,8 +572,8 @@ end)()
 
 				Control.Button.MouseButton1Down:Connect(function()
 					Control.Scroll.Visible = not Control.Scroll.Visible
-					if Control.Scroll.Visible then Control.Button.Text = "Close List";
-					else Control.Button.Text = "Open List"; end
+					if Control.Scroll.Visible then Control.Button.Text = "✕ Close";
+					else Control.Button.Text = "☰ ESP List"; end
 				end)
 
 				return Control;
@@ -592,8 +620,21 @@ end)()
 					Config[Options.Config] = Data.Enabled;
 					Utility:SaveConfig(Config, Directory, File_Name);
 				end
-				if Data.Enabled then pcall(function() On(); Data.Toggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0); end)
-				else pcall(function() Off(); Data.Toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0); end) end
+				if Data.Enabled then
+					pcall(function()
+						On();
+						Data.Toggle.BackgroundColor3 = Color3.fromRGB(180, 0, 0);
+						Data.Button.BackgroundColor3 = Color3.fromRGB(40, 10, 10);
+						Data.Button["UIStroke"].Color = Color3.fromRGB(160, 20, 20);
+					end)
+				else
+					pcall(function()
+						Off();
+						Data.Toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50);
+						Data.Button.BackgroundColor3 = Color3.fromRGB(25, 10, 10);
+						Data.Button["UIStroke"].Color = Color3.fromRGB(80, 15, 15);
+					end)
+				end
 			end
 			Data:Set(Data.Enabled);
 			
@@ -623,9 +664,9 @@ end)()
 					Utility:Instance("Frame", {
 						Name = "Container";
 						BackgroundTransparency = 1;
-						Position = UDim2.new(0, 0, 0.55, 0);
-						Size = UDim2.new(0, 150, 0, 0);
-						Utility:Instance("UIListLayout", { Padding = UDim.new(0, 5); });
+						Position = UDim2.new(0, 8, 0.38, 0);
+						Size = UDim2.new(0, 170, 0, 0);
+						Utility:Instance("UIListLayout", { Padding = UDim.new(0, 6); });
 						Utility:Instance("UIScale", { Scale = 1; });
 					});
 				});
@@ -636,23 +677,30 @@ end)()
 				Name = Name;
 				Parent = SideInfo["Container"];
 				AutomaticSize = Enum.AutomaticSize.Y;
-				BackgroundColor3 = Color3.fromRGB(0, 0, 0);
-				BackgroundTransparency = 0.5;
+				BackgroundColor3 = Color3.fromRGB(8, 3, 3);
+				BackgroundTransparency = 0.1;
+				BorderSizePixel = 0;
 				Size = UDim2.new(1, 0, 0, 0);
+				Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 8); });
+				Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 15, 15); Thickness = 1; });
+				Utility:Instance("UIPadding", { PaddingLeft = UDim.new(0, 6); PaddingRight = UDim.new(0, 6); PaddingBottom = UDim.new(0, 4); });
+				-- Section header
 				Utility:Instance("TextLabel", {
 					BackgroundTransparency = 1;
-					Size = UDim2.new(1, 0, 0, 15);
-					Font = Enum.Font.SourceSansBold;
-					Text = "[ "..Name.." ]";
-					TextColor3 = Color3.fromRGB(255, 255, 255);
+					Size = UDim2.new(1, 0, 0, 18);
+					Font = Enum.Font.FredokaOne;
+					Text = "⚠ "..Name:upper();
+					TextColor3 = Color3.fromRGB(180, 40, 40);
 					TextScaled = true;
+					TextXAlignment = Enum.TextXAlignment.Left;
+					TextStrokeTransparency = 0.5;
 				});
 				Utility:Instance("Frame", {
 					AutomaticSize = Enum.AutomaticSize.Y;
 					BackgroundTransparency = 1;
-					Position = UDim2.new(0, 0, 0, 15);
+					Position = UDim2.new(0, 0, 0, 20);
 					Size = UDim2.new(1, 0, 0, 0);
-					Utility:Instance("UIListLayout", { Padding = UDim.new(0, 0); });
+					Utility:Instance("UIListLayout", { Padding = UDim.new(0, 2); });
 				});
 			});
 			Data.List = Data.Frame["Frame"];
@@ -660,11 +708,14 @@ end)()
 				return Utility:Instance("TextLabel", {
 					Parent = Data.List;
 					BackgroundTransparency = 1;
-					Size = UDim2.new(1, 0, 0, 15);
-					Font = Enum.Font.SourceSans;
+					Size = UDim2.new(1, 0, 0, 16);
+					Font = Enum.Font.SourceSansBold;
 					Text = Text;
-					TextColor3 = Color3.fromRGB(255, 255, 255);
+					TextColor3 = Color3.fromRGB(220, 200, 200);
 					TextScaled = true;
+					TextXAlignment = Enum.TextXAlignment.Left;
+					TextStrokeTransparency = 0.7;
+					TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
 				});
 			end;
 
