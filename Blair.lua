@@ -4,9 +4,9 @@
     ║                       Blair - Roblox                        ║
     ║                                                             ║
     ║  Features:                                                  ║
-    ║    • 	Ghost ESP, Object ESP, Items ESP, Room ESP            ║
-	║    • 	Speed Hack (Toggle)                                   ║
-    ║    • 	Ghost Informations                                    ║
+    ║    • Ghost ESP, Object ESP, Items ESP, Room ESP             ║
+    ║    • Speed Hack (Toggle)                                    ║
+    ║    • Ghost Informations                                     ║
     ╚═════════════════════════════════════════════════════════════╝
 --]]
 
@@ -16,2103 +16,1553 @@ if game:GetService("HttpService"):JSONDecode(game:HttpGet("https://apis.roblox.c
 --------------------
 -- [[ SERVICES ]] --
 --------------------
-local HttpService = game:GetService("HttpService");
-local Players = game:GetService("Players");
-local StarterGui = game:GetService("StarterGui");
-local Lighting = game:GetService("Lighting");
-local RStorage = game:GetService("ReplicatedStorage");
-local UserIS = game:GetService("UserInputService");
-local RService = game:GetService("RunService");
-local TweenService = game:GetService("TweenService");
+local HttpService   = game:GetService("HttpService")
+local Players       = game:GetService("Players")
+local StarterGui    = game:GetService("StarterGui")
+local Lighting      = game:GetService("Lighting")
+local RStorage      = game:GetService("ReplicatedStorage")
+local UserIS        = game:GetService("UserInputService")
+local RService      = game:GetService("RunService")
+local TweenService  = game:GetService("TweenService")
 
-local LocalPlayer = Players.LocalPlayer;
-local PlayerGui = LocalPlayer.PlayerGui;
-local Mouse = LocalPlayer:GetMouse();
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui   = LocalPlayer.PlayerGui
+local Mouse       = LocalPlayer:GetMouse()
 
-if game.PlaceId == 6137321701 then StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "No Loading in Lobby!"; }); return; end
+if game.PlaceId == 6137321701 then
+    StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "No Loading in Lobby!" })
+    return
+end
 
-StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "Loading Blair Script!"; });
+-- ════════════════════════════════════════════════════════════════
+--  LOADING / SUCCESS  UI  (Journal-inspired: dark bg, green border,
+--  salmon/pink title, neon green accents)
+-- ════════════════════════════════════════════════════════════════
+local function MakeNotifGui(titleText, bodyText, isSuccess)
+    -- Remove any old notif
+    if PlayerGui:FindFirstChild("CristineNotif") then
+        PlayerGui:FindFirstChild("CristineNotif"):Destroy()
+    end
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name            = "CristineNotif"
+    gui.ResetOnSpawn    = false
+    gui.DisplayOrder    = 999
+    gui.Parent          = PlayerGui
+
+    -- Dark semi-transparent full-screen tint (only on loading, not success)
+    if not isSuccess then
+        local overlay = Instance.new("Frame", gui)
+        overlay.Size                  = UDim2.new(1,0,1,0)
+        overlay.BackgroundColor3      = Color3.fromRGB(0,0,0)
+        overlay.BackgroundTransparency = 0.45
+        overlay.BorderSizePixel       = 0
+        overlay.ZIndex                = 1
+    end
+
+    -- Card — matches Journal: rounded, dark purple-black bg, green neon border
+    local card = Instance.new("Frame", gui)
+    card.AnchorPoint            = Vector2.new(0.5, 0.5)
+    card.Position               = UDim2.new(0.5,0, isSuccess and 0.08 or 0.5, 0)
+    card.Size                   = UDim2.new(0, isSuccess and 340 or 400, 0, isSuccess and 72 or 130)
+    card.BackgroundColor3       = Color3.fromRGB(18, 10, 22)
+    card.BackgroundTransparency = 0
+    card.BorderSizePixel        = 0
+    card.ZIndex                 = 2
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 14)
+    local stroke = Instance.new("UIStroke", card)
+    stroke.Color     = isSuccess and Color3.fromRGB(80, 220, 80) or Color3.fromRGB(80, 220, 80)
+    stroke.Thickness = 2
+    stroke.ZIndex    = 3
+
+    -- Gradient inside card (purple → dark, like journal bg)
+    local grad = Instance.new("UIGradient", card)
+    grad.Color    = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,   Color3.fromRGB(28, 14, 38)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(14, 22, 14)),
+        ColorSequenceKeypoint.new(1,   Color3.fromRGB(10,  8, 18)),
+    })
+    grad.Rotation = 135
+
+    -- Icon stripe on the left
+    local stripe = Instance.new("Frame", card)
+    stripe.Size             = UDim2.new(0, 6, 1, -16)
+    stripe.Position         = UDim2.new(0, 8, 0, 8)
+    stripe.BackgroundColor3 = isSuccess and Color3.fromRGB(60, 200, 60) or Color3.fromRGB(60, 200, 60)
+    stripe.BorderSizePixel  = 0
+    stripe.ZIndex           = 3
+    Instance.new("UICorner", stripe).CornerRadius = UDim.new(1, 0)
+
+    -- Title — salmon/pink like "Journal" header
+    local title = Instance.new("TextLabel", card)
+    title.Size               = UDim2.new(1, -32, 0, 28)
+    title.Position           = UDim2.new(0, 24, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Font               = Enum.Font.FredokaOne
+    title.Text               = titleText
+    title.TextColor3         = isSuccess and Color3.fromRGB(100, 220, 100) or Color3.fromRGB(240, 140, 160)
+    title.TextScaled         = true
+    title.TextXAlignment     = Enum.TextXAlignment.Left
+    title.ZIndex             = 3
+
+    -- Body text
+    local body = Instance.new("TextLabel", card)
+    body.Size                = UDim2.new(1, -32, 1, -52)
+    body.Position            = UDim2.new(0, 24, 0, 42)
+    body.BackgroundTransparency = 1
+    body.Font                = Enum.Font.SourceSansBold
+    body.Text                = bodyText
+    body.TextColor3          = Color3.fromRGB(200, 210, 200)
+    body.TextScaled          = true
+    body.TextXAlignment      = Enum.TextXAlignment.Left
+    body.TextYAlignment      = Enum.TextYAlignment.Top
+    body.ZIndex              = 3
+
+    -- Spinner dots for loading
+    if not isSuccess then
+        local dotsLabel = Instance.new("TextLabel", card)
+        dotsLabel.Size               = UDim2.new(1,-32, 0, 18)
+        dotsLabel.Position           = UDim2.new(0, 24, 1, -26)
+        dotsLabel.BackgroundTransparency = 1
+        dotsLabel.Font               = Enum.Font.FredokaOne
+        dotsLabel.Text               = "● ● ●"
+        dotsLabel.TextColor3         = Color3.fromRGB(80, 200, 80)
+        dotsLabel.TextScaled         = true
+        dotsLabel.TextXAlignment     = Enum.TextXAlignment.Left
+        dotsLabel.ZIndex             = 3
+        -- Animate dots opacity
+        task.spawn(function()
+            local chars = {"●      ●      ●", "●  ●  ●", "● ● ●", "●●●"}
+            local idx = 1
+            while gui.Parent do
+                dotsLabel.Text = chars[idx]
+                idx = (idx % #chars) + 1
+                task.wait(0.35)
+            end
+        end)
+    end
+
+    return gui
+end
+
+-- Show LOADING ui immediately
+local LoadingGui = MakeNotifGui("✦ CristineHakdog", "Loading Blair Script…", false)
+
+-- ════════════════════════════════════════════════════════════════
+--  WAIT FOR GAME
+-- ════════════════════════════════════════════════════════════════
+print("Loading Blair Script!")
+repeat task.wait(.1) until game.Workspace:FindFirstChild(LocalPlayer.Name)
+repeat task.wait(.1) until game.Workspace[LocalPlayer.Name]:FindFirstChild("HumanoidRootPart")
+repeat task.wait(.1) until game.Workspace:FindFirstChild("Map")
+repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Van")
+repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Doors")
+repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Items")
+repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Zones")
+repeat task.wait(.1) until PlayerGui:FindFirstChild("Journal")
+repeat task.wait(.1) until RStorage:FindFirstChild("ActiveChallenges")
+repeat task.wait(.1) until RStorage:FindFirstChild("Remotes")
+task.wait(5)
+
 local Success, Result = pcall(function()
-	print("Loading Blair Script!");
-	repeat task.wait(.1) until game.Workspace:FindFirstChild(LocalPlayer.Name);
-	repeat task.wait(.1) until game.Workspace[LocalPlayer.Name]:FindFirstChild("HumanoidRootPart");
-	repeat task.wait(.1) until game.Workspace:FindFirstChild("Map");
-	repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Van");
-	repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Doors");
-	repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Items");
-	repeat task.wait(.1) until game.Workspace["Map"]:FindFirstChild("Zones");
-	repeat task.wait(.1) until PlayerGui:FindFirstChild("Journal");
-	repeat task.wait(.1) until RStorage:FindFirstChild("ActiveChallenges");
-	repeat task.wait(.1) until RStorage:FindFirstChild("Remotes");
-	task.wait(5);
 
-	local Utility = (function()
---// UTILITY MODULE
-local Utility = {
-	Threads = {},
-	AllIDs = {},
-	FoundAnything = "",
-	ActualHour = os.date("!*t").hour,
-}
+-- ════════════════════════════════════════════════════════════════
+--  UTILITY MODULE
+-- ════════════════════════════════════════════════════════════════
+local Utility = (function()
+local U = { Threads = {}; AllIDs = {}; FoundAnything = ""; ActualHour = os.date("!*t").hour; }
 do
-	function Utility:Instance(Name, Data)
-		local Object = Instance.new(Name, Data.Parent);
-		for Index, Value in next, Data do
-			if Index ~= "Parent" then
-				if typeof(Value) == "Instance" then Value.Parent = Object;
-				else Object[Index] = Value; end
-			end
-		end
-		return Object;
-	end
-	
-	function Utility:CommaValue(Text:string)
-		local Value = Text;
-		while true do
-			local Str, Num = string.gsub(Value, "^(-?%d+)(%d%d%d)", "%1,%2");
-			Value = Str
-			if Num ~= 0 then else break end
-		end
-		return Value
-	end
-
-	function Utility:CombineTable(...:{any})
-		local newTable = {}
-		for _, v in ipairs({...}) do
-			for i, x in ipairs(v) do
-				table.insert(newTable, x)
-			end
-		end
-		return newTable
-	end
-
-	function Utility:GetTableKeys(Table:{any})
-		local newTable = {}
-		for k, _ in pairs(Table) do table.insert(newTable, k) end
-		return newTable
-	end
-	
-	function Utility:Length(Table:{any})
-		local Counter = 0
-		for _, v in pairs(Table) do Counter += 1; end
-		return Counter
-	end
-
-	function Utility:Show(UIObjects:{GuiObject}, Visible:boolean)
-		for Index, Value in pairs(UIObjects) do
-			Value.Visible = Visible
-		end
-	end
-	
-	function Utility:SaveConfig(Config:{any}, Directory:string, File:string)
-		local HttpService = game:GetService("HttpService")
-		if not isfolder(Directory) then
-			local Folders = Directory:split("/")
-			local tempDirectory = Folders[1]
-			for _, folder in pairs(Folders) do
-				if folder == tempDirectory then makefolder(folder); continue; end
-				tempDirectory = tempDirectory .. "/" .. folder
-				makefolder(tempDirectory)
-			end
-		end
-
-		writefile(Directory .. "/" .. File, HttpService:JSONEncode(Config))
-		return self:LoadConfig(Config, Directory, File)
-	end
-
-	function Utility:LoadConfig(Config:{any}, Directory:string, File:string)
-		local Success, Response = pcall(function()
-			local HttpService = game:GetService("HttpService")
-			if not isfolder(Directory) then
-				local Folders = Directory:split("/")
-				local tempDirectory = Folders[1]
-				for _, folder in pairs(Folders) do
-					if folder == tempDirectory then makefolder(folder); continue; end
-					tempDirectory = tempDirectory .. "/" .. folder
-					makefolder(tempDirectory)
-				end
-			end
-
-			return HttpService:JSONDecode(readfile(Directory .. "/" .. File))
-		end)
-
-		if Success then return Response
-		else return self:SaveConfig(Config, Directory, File) end
-	end
-
-	function Utility:GetFiles(Directory:string)
-		if not isfolder(Directory) then makefolder(Directory) end
-		return listfiles(Directory)
-	end
-	
-	function Utility:Thread(ID:string, Callback)
-		local Thread = coroutine.create(Callback)
-		self.Threads[ID] = Thread
-
-		return setmetatable({
-			ID = ID,
-			Thread = Thread,
-			Start = function() coroutine.resume(Thread); end,
-			Stop = function() coroutine.close(Thread); end,
-			Status = function() return coroutine.status(Thread) end,
-		}, {})
-	end
-
-	function Utility:StopAllThreads()
-		for i, v in pairs(self.Threads) do
-			if coroutine.status(v) == "running" then
-				coroutine.close(v)
-			end
-			self.Threads = {}
-		end
-	end
-
-	function Utility:Teleporter(PlaceID)
-		local Deleted = false
-    	local Last
-		local ServerFile = pcall(function() Utility.AllIDs = game:GetService('HttpService'):JSONDecode(readfile("NotSameServers.json")) end)
-		if not ServerFile then
-			table.insert(Utility.AllIDs, Utility.ActualHour)
-			writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(Utility.AllIDs))
-		end
-
-		local Site;
-		if Utility.FoundAnything == "" then
-			Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
-        else
-			Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. Utility.FoundAnything))
-		end
-
-		local ID = ""
-        if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
-			Utility.FoundAnything = Site.nextPageCursor
-		end
-
-		local Num = 0;
-        local ExtraNum = 0
-		for Index, Server in pairs(Site.data) do
-            ExtraNum += 1
-            local Possible = true
-            ID = tostring(Server.id)
-            if tonumber(Server.maxPlayers) > tonumber(Server.playing) then
-                if ExtraNum ~= 1 and tonumber(Server.playing) < Last or ExtraNum == 1 then Last = tonumber(Server.playing)
-                elseif ExtraNum ~= 1 then continue end
-
-                for _, Existing in pairs(Utility.AllIDs) do
-                    if Num ~= 0 then
-                        if ID == tostring(Existing) then Possible = false end
-                    else
-                        if tonumber(Utility.ActualHour) ~= tonumber(Existing) then
-                            local delFile = pcall(function()
-                                delfile("NotSameServers.json")
-                                Utility.AllIDs = {}
-                                table.insert(Utility.AllIDs, Utility.ActualHour)
-                            end)
-                        end
-                    end
-                    Num = Num + 1
+    function U:Instance(Name, Data)
+        local obj = Instance.new(Name, Data.Parent)
+        for k, v in next, Data do
+            if k ~= "Parent" then
+                if typeof(v) == "Instance" then v.Parent = obj else obj[k] = v end
+            end
+        end
+        return obj
+    end
+    function U:CombineTable(...) local t={} for _,v in ipairs({...}) do for _,x in ipairs(v) do table.insert(t,x) end end return t end
+    function U:GetTableKeys(T) local t={} for k in pairs(T) do table.insert(t,k) end return t end
+    function U:SaveConfig(Config, Dir, File)
+        if not isfolder(Dir) then
+            local parts = Dir:split("/"); local tmp = parts[1]; makefolder(tmp)
+            for _,f in pairs(parts) do if f~=tmp then tmp=tmp.."/"..f; makefolder(tmp) end end
+        end
+        writefile(Dir.."/"..File, HttpService:JSONEncode(Config))
+        return self:LoadConfig(Config, Dir, File)
+    end
+    function U:LoadConfig(Config, Dir, File)
+        local ok, res = pcall(function()
+            if not isfolder(Dir) then
+                local parts = Dir:split("/"); local tmp = parts[1]; makefolder(tmp)
+                for _,f in pairs(parts) do if f~=tmp then tmp=tmp.."/"..f; makefolder(tmp) end end
+            end
+            return HttpService:JSONDecode(readfile(Dir.."/"..File))
+        end)
+        return ok and res or self:SaveConfig(Config, Dir, File)
+    end
+    function U:Thread(ID, Callback)
+        local t = coroutine.create(Callback); self.Threads[ID] = t
+        return setmetatable({ ID=ID; Thread=t;
+            Start  = function() coroutine.resume(t) end;
+            Stop   = function() coroutine.close(t) end;
+            Status = function() return coroutine.status(t) end;
+        }, {})
+    end
+    function U:Teleporter(PlaceID)
+        local Last; local ServerFile = pcall(function() U.AllIDs = HttpService:JSONDecode(readfile("NotSameServers.json")) end)
+        if not ServerFile then table.insert(U.AllIDs, U.ActualHour); writefile("NotSameServers.json", HttpService:JSONEncode(U.AllIDs)) end
+        local Site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/'..PlaceID..'/servers/Public?sortOrder=Asc&limit=100'..(U.FoundAnything~="" and "&cursor="..U.FoundAnything or "")))
+        if Site.nextPageCursor and Site.nextPageCursor~="null" and Site.nextPageCursor~=nil then U.FoundAnything = Site.nextPageCursor end
+        local Num,ExtraNum = 0,0
+        for _,Server in pairs(Site.data) do
+            ExtraNum+=1; local Possible=true; local ID=tostring(Server.id)
+            if tonumber(Server.maxPlayers)>tonumber(Server.playing) then
+                if ExtraNum~=1 and tonumber(Server.playing)<Last or ExtraNum==1 then Last=tonumber(Server.playing) elseif ExtraNum~=1 then continue end
+                for _,Existing in pairs(U.AllIDs) do
+                    if Num~=0 then if ID==tostring(Existing) then Possible=false end
+                    else if tonumber(U.ActualHour)~=tonumber(Existing) then pcall(function() delfile("NotSameServers.json"); U.AllIDs={}; table.insert(U.AllIDs,U.ActualHour) end) end end
+                    Num+=1
                 end
-                if Possible == true then
-                    table.insert(Utility.AllIDs, ID)
-                    task.wait()
-                    pcall(function()
-                        writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(Utility.AllIDs))
-                        task.wait()
-                        game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
-                    end)
-                    task.wait(4)
+                if Possible then table.insert(U.AllIDs,ID); task.wait(); pcall(function() writefile("NotSameServers.json",HttpService:JSONEncode(U.AllIDs)); task.wait(); game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID,ID,LocalPlayer) end); task.wait(4) end
+            end
+        end
+    end
+end
+return U
+end)()
+
+-- ════════════════════════════════════════════════════════════════
+--  BLAIR DATA
+-- ════════════════════════════════════════════════════════════════
+local BlairData = {
+    ["Ghost Type"] = {
+        ["Banshee"]     ={["Evidence"]={"EMF Level 5","SLS Anomaly","Freezing Temp."}};
+        ["Demon"]       ={["Evidence"]={"Freezing Temp.","Ghost Writing","Spirit Box"}};
+        ["Faejkur"]     ={["Evidence"]={"EMF Level 5","Freezing Temp.","Ghost Writing"}};
+        ["Harrow"]      ={["Evidence"]={"SLS Anomaly","Ghost Orb","Ghost Writing"}};
+        ["Lament"]      ={["Evidence"]={"Ghost Orb","EMF Level 5","Spirit Box"}};
+        ["Mare"]        ={["Evidence"]={"Freezing Temp.","SLS Anomaly","Spirit Box"}};
+        ["Nook"]        ={["Evidence"]={"EMF Level 5","Freezing Temp.","Ghost Orb"}};
+        ["Poltergeist"] ={["Evidence"]={"Ultraviolet","Ghost Orb","Spirit Box"}};
+        ["Revenant"]    ={["Evidence"]={"EMF Level 5","Ultraviolet","Ghost Writing"}};
+        ["Shade"]       ={["Evidence"]={"EMF Level 5","SLS Anomaly","Ghost Writing"}};
+        ["Spirit"]      ={["Evidence"]={"Ultraviolet","Ghost Writing","Spirit Box"}};
+        ["Strigoi"]     ={["Evidence"]={"Ultraviolet","Ghost Orb","EMF Level 5"}};
+        ["Vuult"]       ={["Evidence"]={"EMF Level 5","Ghost Orb","SLS Anomaly"}};
+        ["Wraith"]      ={["Evidence"]={"Freezing Temp.","Ghost Orb","SLS Anomaly"}};
+        ["Yama"]        ={["Evidence"]={"Ghost Writing","Spirit Box","SLS Anomaly"}};
+        ["Yurei"]       ={["Evidence"]={"Ultraviolet","Freezing Temp.","Spirit Box"}};
+        ["Zozo"]        ={["Evidence"]={"EMF Level 5","Ultraviolet","Spirit Box"}};
+    };
+    ["Items"] = {
+        ["Incense Burner"]={Parent=game.Workspace["Map"]["Items"]};["Lighter"]={Parent=game.Workspace["Map"]["Items"]};
+        ["Crucifix"]={Parent=game.Workspace["Map"]["Items"]};["Flashlight"]={Parent=game.Workspace["Map"]["Items"]};
+        ["Strong Flashlight"]={Parent=game.Workspace["Map"]["Items"]};["UV Light"]={Parent=game.Workspace["Map"]["Items"]};
+        ["GlowStick"]={Parent=game.Workspace["Map"]["Items"]};["Photo Camera"]={Parent=game.Workspace["Map"]["Items"]};
+        ["Video Camera"]={Parent=game.Workspace["Map"]["Items"]};["Trail Camera"]={Parent=game.Workspace["Map"]["Items"]};
+        ["SLS Camera"]={Parent=game.Workspace["Map"]["Items"]};["EMF Reader"]={Parent=game.Workspace["Map"]["Items"]};
+        ["Thermometer"]={Parent=game.Workspace["Map"]["Items"]};["Spirit Box"]={Parent=game.Workspace["Map"]["Items"]};
+        ["Ghost Writing Book"]={Parent=game.Workspace["Map"]["Items"]};
+        ["Parabolic Microphone"]={Parent=game.Workspace["Map"]["Items"]};
+        ["Salt"]={Parent=game.Workspace["Map"]["Items"]};["Sanity Soda"]={Parent=game.Workspace["Map"]["Items"]};
+    };
+}
+
+-- ════════════════════════════════════════════════════════════════
+--  CONFIG
+-- ════════════════════════════════════════════════════════════════
+local Config = {
+    ["CustomSprint"]      = false;
+    ["CustomSprintSpeed"] = "13";
+    ["Fullbright"]        = false;
+    ["NoClipDoor"]        = false;
+    ["ESP"]               = false;
+    ["ESPList"]           = {};
+    ["SideStatus"]        = false;
+    ["SideStatusScale"]   = "1";
+}
+local Directory = "CristineHakdog/Blair"
+local File_Name = "Settings.json"
+Config = Utility:LoadConfig(Config, Directory, File_Name)
+
+-- Clean up old UI
+if PlayerGui.Journal.Background:FindFirstChild("Settings") then PlayerGui.Journal.Background:FindFirstChild("Settings"):Destroy() end
+if PlayerGui:FindFirstChild("Statusifier") then PlayerGui:FindFirstChild("Statusifier"):Destroy() end
+if PlayerGui:FindFirstChild("ESPPanel")    then PlayerGui:FindFirstChild("ESPPanel"):Destroy()    end
+
+-- ════════════════════════════════════════════════════════════════
+--  COLOURS (Journal palette)
+-- ════════════════════════════════════════════════════════════════
+-- Journal uses: deep purple-black bg, bright green neon borders,
+-- salmon/pink headings, white body text, dark inner panels
+local C = {
+    BG          = Color3.fromRGB(18,  10, 22);   -- main card bg
+    BG2         = Color3.fromRGB(10,   6, 14);   -- inner panel
+    BorderGreen = Color3.fromRGB(60, 210, 90);   -- journal green border
+    BorderRed   = Color3.fromRGB(200,  30, 30);  -- settings bar accent
+    Title       = Color3.fromRGB(240, 140, 160); -- salmon like "Journal"
+    TitleGreen  = Color3.fromRGB(100, 230, 120); -- green title variant
+    Text        = Color3.fromRGB(210, 210, 210);
+    TextDim     = Color3.fromRGB(150, 140, 160);
+    OnGreen     = Color3.fromRGB(50, 200, 80);
+    OnBg        = Color3.fromRGB(10,  60, 20);
+    OffGrey     = Color3.fromRGB(60,  55, 70);
+    OffBg       = Color3.fromRGB(22,  10, 28);
+    BarBg       = Color3.fromRGB(12,   6, 18);
+}
+
+-- ════════════════════════════════════════════════════════════════
+--  SETTINGS BAR  (attached to Journal like before)
+-- ════════════════════════════════════════════════════════════════
+local SettingsBar = Utility:Instance("Frame", {
+    Name                  = "Settings";
+    Parent                = PlayerGui.Journal.Background;
+    AnchorPoint           = Vector2.new(0, 1);
+    BackgroundColor3      = C.BarBg;
+    BackgroundTransparency = 0.05;
+    BorderSizePixel       = 0;
+    Size                  = UDim2.new(1, 0, 0, 52);
+    Utility:Instance("UICorner",   { CornerRadius = UDim.new(0, 10) });
+    Utility:Instance("UIStroke",   { Color = C.BorderGreen; Thickness = 1.5 });
+    Utility:Instance("UIListLayout",{
+        Padding              = UDim.new(0, 5);
+        FillDirection        = Enum.FillDirection.Horizontal;
+        HorizontalAlignment  = Enum.HorizontalAlignment.Center;
+        VerticalAlignment    = Enum.VerticalAlignment.Center;
+    });
+    Utility:Instance("UIPadding",  { PaddingLeft=UDim.new(0,6); PaddingRight=UDim.new(0,6) });
+})
+
+-- ────────────────────────────────────────────────────────────────
+-- Helper: make a settings button cell
+-- Structure:
+--   Frame (column)
+--     TextBox (optional, top)        ← speed / scale input
+--     TextButton (label row, above)  ← "ESP List" / "Close List"  (optional)
+--     TextButton (main toggle)
+--       TextLabel  (name)
+--       Frame      (indicator bar)
+-- ────────────────────────────────────────────────────────────────
+local function MakeCell(name)
+    local col = Utility:Instance("Frame", {
+        Name                  = name;
+        Parent                = SettingsBar;
+        BackgroundTransparency = 1;
+        BorderSizePixel       = 0;
+        Size                  = UDim2.new(0, 88, 1, -6);
+        Utility:Instance("UIListLayout", {
+            Padding             = UDim.new(0, 2);
+            FillDirection       = Enum.FillDirection.Vertical;
+            HorizontalAlignment = Enum.HorizontalAlignment.Center;
+            VerticalAlignment   = Enum.VerticalAlignment.Center;
+        });
+    })
+    return col
+end
+
+local function MakeTextInput(parent, placeholder, configKey)
+    local val = (configKey and Config[configKey]) or placeholder
+    local box = Utility:Instance("TextBox", {
+        Parent                = parent;
+        BackgroundColor3      = C.BG2;
+        BackgroundTransparency = 0;
+        BorderSizePixel       = 0;
+        Size                  = UDim2.new(1, 0, 0, 16);
+        Font                  = Enum.Font.FredokaOne;
+        Text                  = tostring(val);
+        PlaceholderText       = placeholder;
+        PlaceholderColor3     = C.TextDim;
+        TextColor3            = C.Text;
+        TextScaled            = true;
+        ClearTextOnFocus      = false;
+        Utility:Instance("UICorner",  { CornerRadius = UDim.new(0, 4) });
+        Utility:Instance("UIStroke",  { Color = C.BorderGreen; Thickness = 1 });
+    })
+    box:GetPropertyChangedSignal("Text"):Connect(function()
+        box.Text = string.match(box.Text, "%d*[%.]?%d*") or ""
+    end)
+    box.FocusLost:Connect(function()
+        if configKey then
+            Config[configKey] = box.Text
+            Utility:SaveConfig(Config, Directory, File_Name)
+        end
+    end)
+    return box
+end
+
+local function MakeTopBtn(parent, text, width)
+    local btn = Utility:Instance("TextButton", {
+        Parent                = parent;
+        BackgroundColor3      = C.BG2;
+        BackgroundTransparency = 0;
+        BorderSizePixel       = 0;
+        Size                  = UDim2.new(1, 0, 0, 14);
+        Font                  = Enum.Font.FredokaOne;
+        Text                  = text;
+        TextColor3            = C.TitleGreen;
+        TextScaled            = true;
+        Utility:Instance("UICorner",  { CornerRadius = UDim.new(0, 4) });
+        Utility:Instance("UIStroke",  { Color = C.BorderGreen; Thickness = 1 });
+    })
+    return btn
+end
+
+local function MakeToggleBtn(parent, labelText, enabled)
+    local btn = Utility:Instance("TextButton", {
+        Parent                = parent;
+        BackgroundColor3      = enabled and C.OnBg or C.OffBg;
+        BackgroundTransparency = 0;
+        BorderSizePixel       = 0;
+        Size                  = UDim2.new(1, 0, 0, enabled and 26 or 26);
+        Text                  = "";
+        Utility:Instance("UICorner",  { CornerRadius = UDim.new(0, 6) });
+        Utility:Instance("UIStroke",  { Color = enabled and C.OnGreen or C.OffGrey; Thickness = 1.2 });
+        Utility:Instance("TextLabel", {
+            Name                  = "Label";
+            AnchorPoint           = Vector2.new(0.5, 0.5);
+            BackgroundTransparency = 1;
+            Position              = UDim2.new(0.5, 0, 0.44, 0);
+            Size                  = UDim2.new(0.95, 0, 0.6, 0);
+            Font                  = Enum.Font.FredokaOne;
+            Text                  = labelText;
+            TextColor3            = enabled and C.OnGreen or C.TextDim;
+            TextScaled            = true;
+            TextStrokeTransparency = 0.6;
+            TextStrokeColor3      = Color3.fromRGB(0,0,0);
+        });
+        Utility:Instance("Frame", {
+            Name             = "Bar";
+            AnchorPoint      = Vector2.new(0.5, 1);
+            BackgroundColor3 = enabled and C.OnGreen or C.OffGrey;
+            BorderSizePixel  = 0;
+            Position         = UDim2.new(0.5, 0, 1, -1);
+            Size             = UDim2.new(0.7, 0, 0, 2);
+            Utility:Instance("UICorner", { CornerRadius = UDim.new(1,0) });
+        });
+    })
+    return btn
+end
+
+local function SetToggleVisual(btn, on)
+    btn.BackgroundColor3        = on and C.OnBg  or C.OffBg
+    btn["UIStroke"].Color       = on and C.OnGreen or C.OffGrey
+    btn["Label"].TextColor3     = on and C.OnGreen or C.TextDim
+    btn["Bar"].BackgroundColor3 = on and C.OnGreen or C.OffGrey
+end
+
+-- ════════════════════════════════════════════════════════════════
+--  ESP FLOATING PANEL  (Journal-styled: dark, green border, salmon title)
+-- ════════════════════════════════════════════════════════════════
+local ESPPanelGui = Utility:Instance("ScreenGui", {
+    Name          = "ESPPanel";
+    Parent        = PlayerGui;
+    ResetOnSpawn  = false;
+    DisplayOrder  = 98;
+})
+local ESPOverlay = Utility:Instance("TextButton", {
+    Parent                = ESPPanelGui;
+    BackgroundColor3      = Color3.fromRGB(0,0,0);
+    BackgroundTransparency = 0.55;
+    BorderSizePixel       = 0;
+    Size                  = UDim2.new(1,0,1,0);
+    Text                  = "";
+    ZIndex                = 1;
+    Visible               = false;
+})
+local ESPCard = Utility:Instance("Frame", {
+    Parent                = ESPPanelGui;
+    AnchorPoint           = Vector2.new(0.5, 0.5);
+    Position              = UDim2.new(0.5, 0, 0.5, 0);
+    Size                  = UDim2.new(0, 360, 0, 440);
+    BackgroundColor3      = C.BG;
+    BackgroundTransparency = 0;
+    BorderSizePixel       = 0;
+    ZIndex                = 2;
+    Visible               = false;
+    ClipsDescendants      = true;
+    Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 14) });
+    Utility:Instance("UIStroke", { Color = C.BorderGreen; Thickness = 2; ZIndex = 3 });
+    Utility:Instance("UIGradient", {
+        Color    = ColorSequence.new({
+            ColorSequenceKeypoint.new(0,   Color3.fromRGB(28,14,38));
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(12,22,12));
+            ColorSequenceKeypoint.new(1,   Color3.fromRGB(10, 8,18));
+        });
+        Rotation = 135;
+    });
+})
+
+-- Title bar (like Journal header)
+local ESPTitleBar = Utility:Instance("Frame", {
+    Parent                = ESPCard;
+    BackgroundColor3      = Color3.fromRGB(14, 8, 20);
+    BackgroundTransparency = 0;
+    BorderSizePixel       = 0;
+    Size                  = UDim2.new(1, 0, 0, 40);
+    ZIndex                = 3;
+    Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 14) });
+})
+Utility:Instance("TextLabel", {
+    Parent                = ESPTitleBar;
+    AnchorPoint           = Vector2.new(0, 0.5);
+    BackgroundTransparency = 1;
+    Position              = UDim2.new(0, 14, 0.5, 0);
+    Size                  = UDim2.new(0.7, 0, 0.85, 0);
+    Font                  = Enum.Font.FredokaOne;
+    Text                  = "ESP Targets";
+    TextColor3            = C.Title;
+    TextScaled            = true;
+    TextXAlignment        = Enum.TextXAlignment.Left;
+    ZIndex                = 4;
+})
+local ESPCloseBtn = Utility:Instance("TextButton", {
+    Parent                = ESPTitleBar;
+    AnchorPoint           = Vector2.new(1, 0.5);
+    BackgroundColor3      = Color3.fromRGB(60, 10, 10);
+    BackgroundTransparency = 0;
+    BorderSizePixel       = 0;
+    Position              = UDim2.new(1, -8, 0.5, 0);
+    Size                  = UDim2.new(0, 28, 0, 28);
+    Font                  = Enum.Font.FredokaOne;
+    Text                  = "✕";
+    TextColor3            = Color3.fromRGB(255, 180, 180);
+    TextScaled            = true;
+    ZIndex                = 5;
+    Utility:Instance("UICorner", { CornerRadius = UDim.new(0,8) });
+    Utility:Instance("UIStroke", { Color = Color3.fromRGB(180,30,30); Thickness=1; ZIndex=5 });
+})
+
+-- Scroll area
+local ESPScroll = Utility:Instance("ScrollingFrame", {
+    Parent                = ESPCard;
+    AnchorPoint           = Vector2.new(0.5, 1);
+    BackgroundTransparency = 1;
+    BorderSizePixel       = 0;
+    Position              = UDim2.new(0.5, 0, 1, -8);
+    Size                  = UDim2.new(1, -16, 1, -52);
+    ZIndex                = 3;
+    AutomaticCanvasSize   = Enum.AutomaticSize.Y;
+    CanvasSize            = UDim2.new(0,0,0,0);
+    ScrollBarImageColor3  = C.BorderGreen;
+    ScrollBarThickness    = 4;
+    ScrollingDirection    = Enum.ScrollingDirection.Y;
+    Utility:Instance("UIGridLayout", {
+        CellSize    = UDim2.new(0.5, -8, 0, 44);
+        CellPadding = UDim2.new(0, 6, 0, 6);
+        SortOrder   = Enum.SortOrder.LayoutOrder;
+    });
+    Utility:Instance("UIPadding", {
+        PaddingLeft   = UDim.new(0,6);
+        PaddingRight  = UDim.new(0,6);
+        PaddingTop    = UDim.new(0,4);
+        PaddingBottom = UDim.new(0,4);
+    });
+})
+
+-- Build ESP item list  (+Ghost Room)
+local ESPItemList = Utility:CombineTable(
+    {"Ghost", "Ghost Room", "BooBoo Doll", "Generator", "Players", "Cursed Object", "Backpack"},
+    Utility:GetTableKeys(BlairData["Items"])
+)
+
+local ESPSelected = Config["ESPList"] or {}
+local ESPButtons  = {}
+
+for _, item in pairs(ESPItemList) do
+    local on = table.find(ESPSelected, item) ~= nil
+
+    local row = Utility:Instance("Frame", {
+        Name             = item;
+        Parent           = ESPScroll;
+        BackgroundColor3 = on and Color3.fromRGB(10,50,18) or Color3.fromRGB(14,8,20);
+        BorderSizePixel  = 0;
+        ZIndex           = 4;
+        Utility:Instance("UICorner",  { CornerRadius = UDim.new(0,8) });
+        Utility:Instance("UIStroke",  { Color = on and C.BorderGreen or Color3.fromRGB(45,20,60); Thickness=1.2; ZIndex=4 });
+    })
+    Utility:Instance("TextLabel", {
+        Parent                = row;
+        Name                  = "Lbl";
+        AnchorPoint           = Vector2.new(0,0.5);
+        BackgroundTransparency = 1;
+        Position              = UDim2.new(0, 8, 0.5, 0);
+        Size                  = UDim2.new(1, -46, 1, 0);
+        Font                  = Enum.Font.FredokaOne;
+        Text                  = item;
+        TextColor3            = on and C.OnGreen or C.TextDim;
+        TextScaled            = true;
+        TextXAlignment        = Enum.TextXAlignment.Left;
+        TextTruncate          = Enum.TextTruncate.AtEnd;
+        ZIndex                = 5;
+    })
+    -- Pill toggle
+    local pill = Utility:Instance("Frame", {
+        Parent           = row;
+        AnchorPoint      = Vector2.new(1,0.5);
+        BackgroundColor3 = on and C.OnGreen or C.OffGrey;
+        BorderSizePixel  = 0;
+        Position         = UDim2.new(1,-8, 0.5,0);
+        Size             = UDim2.new(0,28,0,14);
+        ZIndex           = 5;
+        Utility:Instance("UICorner", { CornerRadius = UDim.new(1,0) });
+    })
+    local dot = Utility:Instance("Frame", {
+        Parent           = pill;
+        AnchorPoint      = on and Vector2.new(1,0.5) or Vector2.new(0,0.5);
+        BackgroundColor3 = Color3.fromRGB(255,255,255);
+        BorderSizePixel  = 0;
+        Position         = on and UDim2.new(1,-2,0.5,0) or UDim2.new(0,2,0.5,0);
+        Size             = UDim2.new(0,10,0,10);
+        ZIndex           = 6;
+        Utility:Instance("UICorner", { CornerRadius = UDim.new(1,0) });
+    })
+
+    local function SetRow(state)
+        on = state
+        local idx = table.find(ESPSelected, item)
+        if state and not idx   then table.insert(ESPSelected, item)
+        elseif not state and idx then table.remove(ESPSelected, idx) end
+
+        row.BackgroundColor3        = state and Color3.fromRGB(10,50,18) or Color3.fromRGB(14,8,20)
+        row["UIStroke"].Color       = state and C.BorderGreen or Color3.fromRGB(45,20,60)
+        row["Lbl"].TextColor3       = state and C.OnGreen or C.TextDim
+        pill.BackgroundColor3       = state and C.OnGreen or C.OffGrey
+        dot.AnchorPoint             = state and Vector2.new(1,0.5) or Vector2.new(0,0.5)
+        dot.Position                = state and UDim2.new(1,-2,0.5,0) or UDim2.new(0,2,0.5,0)
+
+        Config["ESPList"] = ESPSelected
+        Utility:SaveConfig(Config, Directory, File_Name)
+    end
+
+    -- Click-only (not Down) to avoid scroll mis-taps
+    local hitbox = Utility:Instance("TextButton", {
+        Parent                = row;
+        BackgroundTransparency = 1;
+        BorderSizePixel       = 0;
+        Size                  = UDim2.new(1,0,1,0);
+        Text                  = "";
+        ZIndex                = 7;
+    })
+    hitbox.MouseButton1Click:Connect(function() SetRow(not on) end)
+    ESPButtons[item] = { Row=row; SetRow=SetRow }
+end
+
+-- Panel open/close
+local ESPPanelOpen = false
+local function OpenESP()  ESPPanelOpen=true;  ESPOverlay.Visible=true;  ESPCard.Visible=true  end
+local function CloseESP() ESPPanelOpen=false; ESPOverlay.Visible=false; ESPCard.Visible=false end
+ESPCloseBtn.MouseButton1Click:Connect(CloseESP)
+ESPOverlay.MouseButton1Click:Connect(CloseESP)
+
+-- ════════════════════════════════════════════════════════════════
+--  SIDEBAR  (CreateInfo)
+-- ════════════════════════════════════════════════════════════════
+local function CreateInfo(name)
+    local sideGui
+    if PlayerGui:FindFirstChild("Statusifier") then
+        sideGui = PlayerGui:FindFirstChild("Statusifier")
+    else
+        sideGui = Utility:Instance("ScreenGui", {
+            Name="Statusifier"; Parent=PlayerGui; ResetOnSpawn=false; Enabled=Config["SideStatus"];
+            Utility:Instance("Frame", {
+                Name="Container"; BackgroundTransparency=1;
+                Position=UDim2.new(0,8,0.38,0); Size=UDim2.new(0,170,0,0);
+                Utility:Instance("UIListLayout", { Padding=UDim.new(0,6) });
+                Utility:Instance("UIScale", { Scale=1 });
+            });
+        })
+    end
+    local Data = {}
+    Data.Frame = Utility:Instance("Frame", {
+        Name=name; Parent=sideGui["Container"]; AutomaticSize=Enum.AutomaticSize.Y;
+        BackgroundColor3=Color3.fromRGB(14,8,20); BackgroundTransparency=0.05;
+        BorderSizePixel=0; Size=UDim2.new(1,0,0,0);
+        Utility:Instance("UICorner",  { CornerRadius=UDim.new(0,8) });
+        Utility:Instance("UIStroke",  { Color=C.BorderGreen; Thickness=1 });
+        Utility:Instance("UIPadding", { PaddingLeft=UDim.new(0,6); PaddingRight=UDim.new(0,6); PaddingBottom=UDim.new(0,4) });
+        Utility:Instance("TextLabel", {
+            BackgroundTransparency=1; Size=UDim2.new(1,0,0,18);
+            Font=Enum.Font.FredokaOne; Text="⚠ "..name:upper();
+            TextColor3=C.Title; TextScaled=true;
+            TextXAlignment=Enum.TextXAlignment.Left; TextStrokeTransparency=0.5;
+        });
+        Utility:Instance("Frame", {
+            AutomaticSize=Enum.AutomaticSize.Y; BackgroundTransparency=1;
+            Position=UDim2.new(0,0,0,20); Size=UDim2.new(1,0,0,0);
+            Utility:Instance("UIListLayout", { Padding=UDim.new(0,2) });
+        });
+    })
+    Data.List = Data.Frame["Frame"]
+    Data.AddInfo = function(text)
+        return Utility:Instance("TextLabel", {
+            Parent=Data.List; BackgroundTransparency=1; Size=UDim2.new(1,0,0,16);
+            Font=Enum.Font.SourceSansBold; Text=text; TextColor3=C.Text;
+            TextScaled=true; TextXAlignment=Enum.TextXAlignment.Left;
+            TextStrokeTransparency=0.7; TextStrokeColor3=Color3.fromRGB(0,0,0);
+        })
+    end
+    return Data
+end
+
+-- ════════════════════════════════════════════════════════════════
+--  CreateESP helper (unchanged logic)
+-- ════════════════════════════════════════════════════════════════
+local function CreateESP(Type, Properties)
+    local Data = {}
+    if Type == "Text" then
+        if Properties.ParentText and Properties.ParentText:FindFirstChild("ESP_Text") then
+            Data.ESP = Properties.ParentText["ESP_Text"]
+            Data.ESP.Size        = Properties.Size or UDim2.new(5,0,2,0)
+            Data.ESP.StudsOffset = Properties.StudsOffset or Vector3.new(0,2,0)
+            Data.ESP.Enabled     = Properties.Enabled or false
+            Data.ESP["Title"].Text       = Properties.Text
+            Data.ESP["Title"].TextColor3 = Properties.Color or Color3.fromRGB(255,255,255)
+            if Properties.Distance and Data.ESP:FindFirstChild("Distance") then Data.Distance = Data.ESP["Distance"]; Data.Distance.TextColor3 = Properties.Color or Color3.fromRGB(255,255,255) end
+        elseif Properties.Parent and Properties.Parent:FindFirstChild("ESP_Text") then
+            Data.ESP = Properties.Parent["ESP_Text"]
+            Data.ESP.Size        = Properties.Size or UDim2.new(5,0,2,0)
+            Data.ESP.StudsOffset = Properties.StudsOffset or Vector3.new(0,2,0)
+            Data.ESP.Enabled     = Properties.Enabled or false
+            Data.ESP["Title"].Text       = Properties.Text
+            Data.ESP["Title"].TextColor3 = Properties.Color or Color3.fromRGB(255,255,255)
+            if Properties.Distance and Data.ESP:FindFirstChild("Distance") then Data.Distance = Data.ESP["Distance"]; Data.Distance.TextColor3 = Properties.Color or Color3.fromRGB(255,255,255) end
+        else
+            Data.ESP = Utility:Instance("BillboardGui", {
+                Name="ESP_Text"; Parent=Properties.ParentText or Properties.Parent;
+                ResetOnSpawn=Properties.ResetOnSpawn or false; AlwaysOnTop=true;
+                Enabled=Properties.Enabled or false;
+                Size=Properties.Size or UDim2.new(5,0,2,0);
+                StudsOffset=Properties.StudsOffset or Vector3.new(0,2,0);
+                Utility:Instance("TextLabel", {
+                    Name="Title"; BackgroundTransparency=1; Size=UDim2.new(1,0,0.5,0);
+                    Font=Enum.Font.FredokaOne; Text=Properties.Text;
+                    TextColor3=Properties.Color or Color3.fromRGB(255,255,255); TextScaled=true;
+                });
+            })
+            if Properties.Distance then
+                Data.Distance = Utility:Instance("TextLabel", {
+                    Name="Distance"; Parent=Data.ESP; BackgroundTransparency=1;
+                    Position=UDim2.new(0,0,0.5,0); Size=UDim2.new(1,0,0.5,0);
+                    Font=Enum.Font.FredokaOne; Text="0m";
+                    TextColor3=Properties.Color or Color3.fromRGB(255,255,255); TextScaled=true;
+                })
+            end
+        end
+        if Properties.Distance then
+            task.spawn(function()
+                while task.wait() do
+                    if Data.Destroyed then break end
+                    pcall(function() Data.Distance.Text = math.floor((Properties.Distance.Position - LocalPlayer.Character.PrimaryPart.Position).Magnitude*100)/100 .."m" end)
+                end
+            end)
+        end
+        return setmetatable({ ESP=Data.ESP; Distance=Data.Distance;
+            Enable  = function() pcall(function() Data.ESP.Enabled=true  end) end;
+            Disable = function() pcall(function() Data.ESP.Enabled=false end) end;
+            Destroy = function() pcall(function() Data.Destroyed=true; Data.ESP:Destroy() end) end;
+        }, {})
+    elseif Type == "Highlight" then
+        if Properties.ParentHighlight and Properties.ParentHighlight:FindFirstChild("ESP_Highlight") then Properties.ParentHighlight["ESP_Highlight"]:Destroy() end
+        if Properties.Parent          and Properties.Parent:FindFirstChild("ESP_Highlight")          then Properties.Parent["ESP_Highlight"]:Destroy() end
+        Data.ESP = Utility:Instance("Highlight", {
+            Name="ESP_Highlight"; Parent=Properties.ParentHighlight or Properties.Parent;
+            Enabled=Properties.Enabled or false;
+            FillColor=Properties.Color or Color3.fromRGB(255,255,255);
+            FillTransparency=Properties.FillTransparency or 0.75;
+        })
+        return setmetatable({ ESP=Data.ESP;
+            Enable  = function() pcall(function() Data.ESP.Enabled=true  end) end;
+            Disable = function() pcall(function() Data.ESP.Enabled=false end) end;
+            Destroy = function() pcall(function() Data.ESP:Destroy() end) end;
+        }, {})
+    elseif Type == "Text & Highlight" then
+        Data.TextESP      = CreateESP("Text",      Properties)
+        Data.HighlightESP = CreateESP("Highlight", Properties)
+        return setmetatable({ TextESP=Data.TextESP; HighlightESP=Data.HighlightESP;
+            Enable  = function() pcall(function() Data.TextESP:Enable();  Data.HighlightESP:Enable()  end) end;
+            Disable = function() pcall(function() Data.TextESP:Disable(); Data.HighlightESP:Disable() end) end;
+            Destroy = function() pcall(function() Data.TextESP:Destroy(); Data.HighlightESP:Destroy() end) end;
+        }, {})
+    elseif Type == "Backpack" then
+        if Properties.Parent and Properties.Parent:FindFirstChild("ESP_Backpack") then
+            Data.ESP = Properties.Parent["ESP_Backpack"]
+            Data.ESP.MaxDistance = Properties.MaxDistance or 15
+            Data.ESP.Size        = Properties.Size or UDim2.new(2,0,2,0)
+            Data.ESP.StudsOffset = Properties.StudsOffset or Vector3.new(2,1,1)
+            Data.ESP.Enabled     = Properties.Enabled or false
+        else
+            Data.ESP = Utility:Instance("BillboardGui", {
+                Name="ESP_Backpack"; Parent=Properties.Parent; ResetOnSpawn=Properties.ResetOnSpawn or false;
+                AlwaysOnTop=true; MaxDistance=Properties.MaxDistance or 15;
+                Size=Properties.Size or UDim2.new(2,0,2,0); StudsOffset=Properties.StudsOffset or Vector3.new(2,1,1);
+                Enabled=Properties.Enabled or false;
+                Utility:Instance("Frame", {
+                    BackgroundTransparency=1; Size=UDim2.new(1,0,1,0);
+                    Utility:Instance("UIListLayout", { HorizontalAlignment=Enum.HorizontalAlignment.Center });
+                });
+            })
+        end
+        Data.Slots = {}
+        for Slot=1,5 do
+            if Data.ESP["Frame"]:FindFirstChild("Slot_"..Slot) then Data.Slots[Slot]=Data.ESP["Frame"]:FindFirstChild("Slot_"..Slot)
+            else Data.Slots[Slot]=Utility:Instance("TextLabel",{ Name="Slot_"..Slot; Parent=Data.ESP["Frame"]; BackgroundTransparency=1; Size=UDim2.new(1,0,0.2,0); Font=Enum.Font.SourceSansBold; Text=""; TextColor3=Color3.fromRGB(255,255,255); TextScaled=true; TextStrokeTransparency=0 }) end
+        end
+        return setmetatable({ ESP=Data.ESP; Slots=Data.Slots;
+            Enable  = function() pcall(function() Data.ESP.Enabled=true  end) end;
+            Disable = function() pcall(function() Data.ESP.Enabled=false end) end;
+            Destroy = function() pcall(function() Data.Destroyed=true; Data.ESP:Destroy() end) end;
+        }, {})
+    end
+end
+
+-- ════════════════════════════════════════════════════════════════
+--  INITIALIZE  (ESP holders, doors, lighting save)
+-- ════════════════════════════════════════════════════════════════
+local Sprinting    = false
+local Doors        = {}
+local function PopulateDoors(Model)
+    for _,v in pairs(Model:GetChildren()) do
+        if not table.find({"Part","MeshPart","Model"}, v.ClassName) then continue end
+        if #v:GetChildren()>0 then PopulateDoors(v) end
+        if (v.ClassName=="Part" or v.ClassName=="MeshPart") and v.CanCollide then table.insert(Doors,v) end
+    end
+end
+PopulateDoors(game.Workspace["Map"]["Doors"])
+
+local SavedLighting = {}
+for _,k in pairs({"Ambient","OutdoorAmbient","Brightness"}) do SavedLighting[k]=Lighting[k] end
+local AtmosphereDensity = Lighting["Atmosphere"].Density
+
+local LowestTemp    = nil
+local CryingCount   = 0
+local DoorCount     = 0
+local ManifestCount = 0
+local blinkConnection
+
+local BooBooESP     = {}
+local GeneratorESP  = {}
+local GhostESP      = {}
+local PlayerESP     = {}
+local CursedObjESP  = nil
+local ItemsESP      = {}
+local GhostRoomESP  = nil   -- NEW
+
+task.spawn(function()
+    repeat task.wait() until game.Workspace:FindFirstChild("BooBooDoll")
+    BooBooESP["Text"]      = CreateESP("Text",      { Text="[BooBoo]";     Distance=game.Workspace["BooBooDoll"]; Parent=game.Workspace["BooBooDoll"]; Color=Color3.fromRGB(0,255,255) })
+    BooBooESP["Highlight"] = CreateESP("Highlight", { Parent=game.Workspace["BooBooDoll"]; Color=Color3.fromRGB(0,255,255) })
+
+    repeat task.wait() until #game.Workspace["Map"]["Generators"]:GetChildren()>0
+    if game.Workspace["Map"]["Generators"]:GetChildren()[1]:WaitForChild("Highlight",1) then game.Workspace["Map"]["Generators"]:GetChildren()[1]["Highlight"]:Destroy() end
+    local Gen = game.Workspace["Map"]["Generators"]:GetChildren()[1]
+    GeneratorESP["Text"]      = CreateESP("Text",      { Text="[Generator]"; Distance=Gen; Parent=Gen; Color=Color3.fromRGB(255,16,240) })
+    GeneratorESP["Highlight"] = CreateESP("Highlight", { Parent=Gen; Color=Color3.fromRGB(255,16,240) })
+end)
+
+if game.Workspace:FindFirstChild("Ghost") then
+    if game.Workspace["Ghost"]:WaitForChild("Highlight",1) then game.Workspace["Ghost"]["Highlight"]:Destroy() end
+    local G = game.Workspace["Ghost"]
+    GhostESP["Text"]      = CreateESP("Text",      { Text="[Ghost]"; Distance=G.PrimaryPart; ParentText=G:WaitForChild("Head"); Color=Color3.fromRGB(255,0,0) })
+    GhostESP["Highlight"] = CreateESP("Highlight", { Parent=G; Color=Color3.fromRGB(255,0,0) })
+end
+
+for _,player in pairs(Players:GetChildren()) do
+    if player==LocalPlayer then continue end
+    repeat task.wait() until player.Character
+    PlayerESP[player.Name] = {}
+    PlayerESP[player.Name]["Player"]   = player
+    PlayerESP[player.Name]["ESP"]      = CreateESP("Text & Highlight", { Text=player.DisplayName; ParentText=player.Character:FindFirstChild("Head"); ParentHighlight=player.Character; Color=Color3.fromRGB(255,255,255); FillTransparency=1 })
+    PlayerESP[player.Name]["Backpack"] = CreateESP("Backpack", { Parent=player.Character })
+end
+
+local function ValidateItemESP(item)
+    if item.Name=="Tarot Cards" or item.Name=="Music Box" then return false end
+    if not table.find(Utility:GetTableKeys(BlairData["Items"]), item.Name) then return false end
+    if item.Name=="Incense Burner" then
+        if item:WaitForChild("Used").Value then return false end
+        if item:WaitForChild("GhostIncensed").Value then return false end
+    end
+    if item.Name=="Photo Camera" and item:FindFirstChild("PhotoCameraMemory") then
+        if item["PhotoCameraMemory"]:WaitForChild("Memory").Value==100 then return false end
+        if item["PhotoCameraMemory"]:WaitForChild("MemoryCapacity").Text=="100/100 MB" then return false end
+    end
+    return true
+end
+
+task.spawn(function()
+    task.wait(5)
+    for _,item in pairs(game.Workspace["Map"]["Items"]:GetChildren()) do
+        if not ValidateItemESP(item) then continue end
+        if not table.find(Config["ESPList"], item.Name) then continue end
+        local Item = { ["Item"]=item }
+        Item["ESP"] = CreateESP("Highlight", { Parent=item; Color=Color3.fromRGB(0,255,0) })
+        table.insert(ItemsESP, Item)
+    end
+end)
+
+-- ════════════════════════════════════════════════════════════════
+--  SETTINGS BAR CELLS
+-- ════════════════════════════════════════════════════════════════
+
+-- ── Custom Sprint ──────────────────────────────────────────────
+local SprintCell     = MakeCell("Sprint")
+local SprintSpeedBox = MakeTextInput(SprintCell, "13", "CustomSprintSpeed")
+local SprintBtn      = MakeToggleBtn(SprintCell, "Custom Sprint", Config["CustomSprint"])
+SprintBtn.MouseButton1Click:Connect(function()
+    Config["CustomSprint"] = not Config["CustomSprint"]
+    SetToggleVisual(SprintBtn, Config["CustomSprint"])
+    Utility:SaveConfig(Config, Directory, File_Name)
+end)
+
+-- ── Fullbright ─────────────────────────────────────────────────
+local FBCell = MakeCell("Fullbright")
+local FBBtn  = MakeToggleBtn(FBCell, "Fullbright", Config["Fullbright"])
+FBBtn.Size   = UDim2.new(1, 0, 1, -6)   -- taller since no textbox above
+FBBtn.MouseButton1Click:Connect(function()
+    Config["Fullbright"] = not Config["Fullbright"]
+    SetToggleVisual(FBBtn, Config["Fullbright"])
+    Utility:SaveConfig(Config, Directory, File_Name)
+    if Config["Fullbright"] then
+        Lighting.Ambient         = Color3.fromRGB(138,138,138)
+        Lighting.OutdoorAmbient  = Color3.fromRGB(128,128,128)
+        Lighting.Brightness      = 2
+        Lighting["Atmosphere"].Density = 0
+    else
+        for k,v in pairs(SavedLighting) do Lighting[k]=v end
+        Lighting["Atmosphere"].Density = AtmosphereDensity
+    end
+end)
+UserIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.T then
+        Config["Fullbright"] = not Config["Fullbright"]
+        SetToggleVisual(FBBtn, Config["Fullbright"])
+        Utility:SaveConfig(Config, Directory, File_Name)
+        if Config["Fullbright"] then
+            Lighting.Ambient=Color3.fromRGB(138,138,138); Lighting.OutdoorAmbient=Color3.fromRGB(128,128,128)
+            Lighting.Brightness=2; Lighting["Atmosphere"].Density=0
+        else
+            for k,v in pairs(SavedLighting) do Lighting[k]=v end
+            Lighting["Atmosphere"].Density=AtmosphereDensity
+        end
+    end
+end)
+
+-- ── No Clip Door ───────────────────────────────────────────────
+local NCCell = MakeCell("NoClip")
+local NCBtn  = MakeToggleBtn(NCCell, "No Clip Door", Config["NoClipDoor"])
+NCBtn.Size   = UDim2.new(1, 0, 1, -6)
+NCBtn.MouseButton1Click:Connect(function()
+    Config["NoClipDoor"] = not Config["NoClipDoor"]
+    SetToggleVisual(NCBtn, Config["NoClipDoor"])
+    Utility:SaveConfig(Config, Directory, File_Name)
+    if Config["NoClipDoor"] then
+        for _,v in pairs(Doors) do v.CanCollide=false end
+        game.Workspace["Map"]["Van"]["Van"]["Door"]["Lines"]["Part"].CanCollide=false
+        game.Workspace["Map"]["Van"]["Van"]["Door"]["Main"].CanCollide=false
+    else
+        for _,v in pairs(Doors) do v.CanCollide=true end
+        game.Workspace["Map"]["Van"]["Van"]["Door"]["Lines"]["Part"].CanCollide=true
+        game.Workspace["Map"]["Van"]["Van"]["Door"]["Main"].CanCollide=true
+    end
+end)
+UserIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.X then
+        Config["NoClipDoor"] = not Config["NoClipDoor"]
+        SetToggleVisual(NCBtn, Config["NoClipDoor"])
+        Utility:SaveConfig(Config, Directory, File_Name)
+        if Config["NoClipDoor"] then
+            for _,v in pairs(Doors) do v.CanCollide=false end
+            game.Workspace["Map"]["Van"]["Van"]["Door"]["Lines"]["Part"].CanCollide=false
+            game.Workspace["Map"]["Van"]["Van"]["Door"]["Main"].CanCollide=false
+        else
+            for _,v in pairs(Doors) do v.CanCollide=true end
+            game.Workspace["Map"]["Van"]["Van"]["Door"]["Lines"]["Part"].CanCollide=true
+            game.Workspace["Map"]["Van"]["Van"]["Door"]["Main"].CanCollide=true
+        end
+    end
+end)
+
+-- ── ESP  (ESP List btn on top, ESP toggle below) ───────────────
+local ESPCell    = MakeCell("ESP")
+local ESPListBtn = MakeTopBtn(ESPCell, "☰ ESP List")
+local ESPBtn     = MakeToggleBtn(ESPCell, "ESP", Config["ESP"])
+
+ESPListBtn.MouseButton1Click:Connect(function()
+    if ESPPanelOpen then
+        CloseESP()
+        ESPListBtn.Text = "☰ ESP List"
+    else
+        OpenESP()
+        ESPListBtn.Text = "✕ Close List"
+    end
+end)
+-- Also close panel → reset button text
+ESPCloseBtn.MouseButton1Click:Connect(function() ESPListBtn.Text = "☰ ESP List" end)
+ESPOverlay.MouseButton1Click:Connect(function()  ESPListBtn.Text = "☰ ESP List" end)
+
+ESPBtn.MouseButton1Click:Connect(function()
+    Config["ESP"] = not Config["ESP"]
+    SetToggleVisual(ESPBtn, Config["ESP"])
+    Utility:SaveConfig(Config, Directory, File_Name)
+end)
+
+-- ── Side Status ────────────────────────────────────────────────
+local SideCell     = MakeCell("Status")
+local SideScaleBox = MakeTextInput(SideCell, "1", "SideStatusScale")
+local SideBtn      = MakeToggleBtn(SideCell, "Side Status", Config["SideStatus"])
+SideBtn.MouseButton1Click:Connect(function()
+    Config["SideStatus"] = not Config["SideStatus"]
+    SetToggleVisual(SideBtn, Config["SideStatus"])
+    Utility:SaveConfig(Config, Directory, File_Name)
+    if PlayerGui:FindFirstChild("Statusifier") then
+        PlayerGui["Statusifier"].Enabled = Config["SideStatus"]
+    end
+end)
+
+-- ════════════════════════════════════════════════════════════════
+--  CURSED OBJECT SIDEBAR
+-- ════════════════════════════════════════════════════════════════
+local Objects = CreateInfo("Cursed Object")
+task.spawn(function()
+    pcall(function()
+        local function AddCursedESP(Display, Parent)
+            CursedObjESP = CreateESP("Text", { Text=Display; Parent=Parent; Color=Color3.fromRGB(215,252,0) })
+            if Config["ESP"] and table.find(Config["ESPList"],"Cursed Object") then CursedObjESP:Enable() else CursedObjESP:Disable() end
+        end
+        local function FindInPlayers(Name)
+            for _,P in pairs(Players:GetChildren()) do
+                if P.Backpack:FindFirstChild(Name) then return P.Backpack:FindFirstChild(Name) end
+                if P.Character and P.Character:FindFirstChild(Name) then return P.Character:FindFirstChild(Name) end
+            end
+        end
+        local function TryFind(Name, Parent, T)
+            local f = Parent:WaitForChild(Name, T or 10)
+            if f then return f end
+            return FindInPlayers(Name)
+        end
+
+        local SC = game.Workspace:WaitForChild("SummoningCircle", 10)
+        if SC then Objects.AddInfo("Summoning Circle"); AddCursedESP("[Summoning Circle]", SC) end
+        local SB = game.Workspace:WaitForChild("Spirit Board", 10)
+        if SB then Objects.AddInfo("Spirit Board"); AddCursedESP("[Spirit Board]", SB) end
+        local TC = TryFind("Tarot Cards", game.Workspace["Map"]["Items"], 10) or FindInPlayers("Tarot Cards")
+        if TC then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", TC) end
+        local MB = TryFind("Music Box", game.Workspace["Map"]["Items"], 10) or FindInPlayers("Music Box")
+        if MB then Objects.AddInfo("Music Box"); AddCursedESP("[Music Box]", MB) end
+
+        game.Workspace.ChildAdded:Connect(function(c)
+            if c.Name=="SummoningCircle" then Objects.AddInfo("Summoning Circle"); AddCursedESP("[Summoning Circle]", c) end
+            if c.Name=="Spirit Board"    then Objects.AddInfo("Spirit Board");     AddCursedESP("[Spirit Board]", c)     end
+        end)
+        game.Workspace["Map"]["Items"].ChildAdded:Connect(function(c)
+            if c.Name=="Tarot Cards" then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", c) end
+            if c.Name=="Music Box"   then Objects.AddInfo("Music Box");   AddCursedESP("[Music Box]", c)   end
+        end)
+        for _,P in pairs(Players:GetChildren()) do
+            P.CharacterAdded:Connect(function(char)
+                char.ChildAdded:Connect(function(c)
+                    if c.Name=="Tarot Cards" then AddCursedESP("[Tarot Cards]", c) end
+                    if c.Name=="Music Box"   then AddCursedESP("[Music Box]", c)   end
+                end)
+            end)
+            P.Backpack.ChildAdded:Connect(function(c)
+                if c.Name=="Tarot Cards" then AddCursedESP("[Tarot Cards]", c) end
+                if c.Name=="Music Box"   then AddCursedESP("[Music Box]", c)   end
+            end)
+        end
+    end)
+end)
+
+-- ════════════════════════════════════════════════════════════════
+--  ROOM SIDEBAR  (+ Ghost Room ESP)
+-- ════════════════════════════════════════════════════════════════
+local Room         = CreateInfo("Possible Room")
+local RoomName     = Room.AddInfo("Room Name")
+local RoomTemp     = Room.AddInfo("Room Temp")
+local RoomWater    = Room.AddInfo("Water Running")
+local RoomSalt     = Room.AddInfo("Salt Stepped"); RoomSalt.Visible=false
+local RoomCrying   = Room.AddInfo("Ghost Crying"); RoomCrying.Visible=false
+local RoomDoor     = Room.AddInfo("Door Interact"); RoomDoor.Visible=false
+local RoomManifest = Room.AddInfo("Manifest");      RoomManifest.Visible=false
+
+local RoomThread = Utility:Thread("Room", function()
+    local CurHighlightRoom = nil
+    local RoomESPObj = nil
+    while task.wait() do
+        local LowestRoom = nil
+        for _,v in pairs(game.Workspace["Map"]["Zones"]:GetChildren()) do
+            if v.ClassName~="Part" and v.ClassName~="UnionOperation" then continue end
+            if v:FindFirstChild("Exclude") then continue end
+            if not v:FindFirstChild("_____Temperature") then continue end
+            if not v["_____Temperature"]:FindFirstChild("_____LocalBaseTemp") then continue end
+            if LowestRoom==nil then LowestRoom=v; continue end
+            if v["_____Temperature"]["_____LocalBaseTemp"].Value > LowestRoom["_____Temperature"]["_____LocalBaseTemp"].Value then continue end
+            LowestRoom = v
+        end
+        if LowestRoom and LowestRoom["_____Temperature"] then
+            local raw  = LowestRoom["_____Temperature"].Value
+            local ti   = math.floor(raw*100)
+            local tw   = math.floor(ti/100)
+            local td   = math.abs(ti)%100
+            local tstr = tostring(tw)..".".. (td<10 and "0"..tostring(td) or tostring(td))
+            RoomName.Text = "Room: "..LowestRoom.Name
+            RoomTemp.Text = "Temp: "..tstr.."°C"
+            LowestTemp    = LowestRoom
+
+            -- Ghost Room ESP (new)
+            if CurHighlightRoom ~= LowestRoom then
+                -- Destroy old
+                if RoomESPObj then pcall(function() RoomESPObj.Destroy() end) end
+                pcall(function()
+                    local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp and hrp:FindFirstChild("RoomESP_Att0") then hrp:FindFirstChild("RoomESP_Att0"):Destroy() end
+                    if game.Workspace.Terrain:FindFirstChild("RoomESP_Att1") then game.Workspace.Terrain:FindFirstChild("RoomESP_Att1"):Destroy() end
+                    if game.Workspace.Terrain:FindFirstChild("RoomESP_Beam") then game.Workspace.Terrain:FindFirstChild("RoomESP_Beam"):Destroy() end
+                end)
+
+                -- Create new floating label
+                RoomESPObj = CreateESP("Text", {
+                    Text        = "[Ghost Room] "..LowestRoom.Name;
+                    Parent      = LowestRoom;
+                    Distance    = LowestRoom;
+                    Color       = Color3.fromRGB(255,140,0);
+                    Size        = UDim2.new(8,0,2,0);
+                    StudsOffset = Vector3.new(0,5,0);
+                })
+                -- Only show if ESP + Ghost Room selected
+                if Config["ESP"] and table.find(Config["ESPList"],"Ghost Room") then
+                    RoomESPObj.Enable()
+                else
+                    RoomESPObj.Disable()
+                end
+
+                -- Beam
+                pcall(function()
+                    local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if not hrp then return end
+                    local att0 = Instance.new("Attachment"); att0.Name="RoomESP_Att0"; att0.Parent=hrp
+                    local att1 = Instance.new("Attachment"); att1.Name="RoomESP_Att1"; att1.WorldPosition=LowestRoom.Position; att1.Parent=game.Workspace.Terrain
+                    local beam = Instance.new("Beam")
+                    beam.Name="RoomESP_Beam"; beam.Attachment0=att0; beam.Attachment1=att1
+                    beam.Color=ColorSequence.new(Color3.fromRGB(255,140,0)); beam.Width0=0.1; beam.Width1=0.1
+                    beam.FaceCamera=true; beam.LightEmission=1; beam.Transparency=NumberSequence.new(0.2)
+                    beam.Parent=game.Workspace.Terrain
+                end)
+                CurHighlightRoom = LowestRoom
+            else
+                if RoomESPObj and RoomESPObj.ESP then
+                    pcall(function() RoomESPObj.ESP["Title"].Text = "[Ghost Room] "..LowestRoom.Name end)
                 end
             end
         end
-	end
 
-end
-return Utility
-end)()
-	local BlairData = (function()
---// DATA MODULE
-return {
-    ["Ghost Type"] = {
-        ["Banshee"] = {
-            ["Evidence"] = {"EMF Level 5","SLS Anomaly","Freezing Temp."};
-        };
-        ["Demon"] = {
-            ["Evidence"] = {"Freezing Temp.","Ghost Writing","Spirit Box"};
-        };
-        ["Faejkur"] = {
-            ["Evidence"] = {"EMF Level 5","Freezing Temp.","Ghost Writing"};
-        };
-        ["Harrow"] = {
-            ["Evidence"] = {"SLS Anomaly","Ghost Orb","Ghost Writing"};
-        };
-        ["Lament"] = {
-            ["Evidence"] = {"Ghost Orb","EMF Level 5","Spirit Box"};
-        };
-        ["Mare"] = {
-            ["Evidence"] = {"Freezing Temp.","SLS Anomaly","Spirit Box"};
-        };
-        ["Nook"] = {
-            ["Evidence"] = {"EMF Level 5","Freezing Temp.","Ghost Orb"};
-        };
-        ["Poltergeist"] = {
-            ["Evidence"] = {"Ultraviolet","Ghost Orb","Spirit Box"};
-        };
-        ["Revenant"] = {
-            ["Evidence"] = {"EMF Level 5","Ultraviolet","Ghost Writing"};
-        };
-        ["Shade"] = {
-            ["Evidence"] = {"EMF Level 5","SLS Anomaly","Ghost Writing"};
-        };
-        ["Spirit"] = {
-            ["Evidence"] = {"Ultraviolet","Ghost Writing","Spirit Box"};
-        };
-        ["Strigoi"] = {
-            ["Evidence"] = {"Ultraviolet","Ghost Orb","EMF Level 5"};
-        };
-        ["Vuult"] = {
-            ["Evidence"] = {"EMF Level 5","Ghost Orb","SLS Anomaly"};
-        };
-        ["Wraith"] = {
-            ["Evidence"] = {"Freezing Temp.","Ghost Orb","SLS Anomaly"};
-        };
-        ["Yama"] = {
-            ["Evidence"] = {"Ghost Writing","Spirit Box","SLS Anomaly"};
-        };
-        ["Yurei"] = {
-            ["Evidence"] = {"Ultraviolet","Freezing Temp.","Spirit Box"};
-        };
-        ["Zozo"] = {
-            ["Evidence"] = {"EMF Level 5","Ultraviolet","Spirit Box"};
-        };
-    };
-    ["Map"] = {
+        local FoundWater=false
+        for _,w in pairs(game.Workspace["Map"]["Water"]:GetChildren()) do
+            if #w:GetChildren()>0 and w:FindFirstChild("WaterRunning") then FoundWater=true; break end
+        end
+        RoomWater.Visible = FoundWater
+        if not RoomSalt.Visible then
+            for _,s in pairs(game.Workspace["Map"]["Misc"]:GetChildren()) do
+                if s.Name=="SaltStepped" then RoomSalt.Visible=true end
+            end
+        end
+        if CryingCount>0   then RoomCrying.Visible=true;   RoomCrying.Text="Ghost Crying: "..CryingCount   end
+        if DoorCount>0     then RoomDoor.Visible=true;     RoomDoor.Text="Door Interact: "..DoorCount       end
+        if ManifestCount>0 then RoomManifest.Visible=true; RoomManifest.Text="Manifest: "..ManifestCount    end
+    end
+end):Start()
 
-    };
-    ["Items"] = {
-        ["Incense Burner"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["Lighter"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["Crucifix"] = {Parent = game.Workspace["Map"]["Items"]};
-		["Flashlight"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["Strong Flashlight"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["UV Light"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["GlowStick"] = {Parent = game.Workspace["Map"]["Items"]};
-		["Photo Camera"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["Video Camera"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["Trail Camera"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["SLS Camera"] = {Parent = game.Workspace["Map"]["Items"]};
-		["EMF Reader"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["Thermometer"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["Spirit Box"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["Ghost Writing Book"] = {Parent = game.Workspace["Map"]["Items"]};
-		["Parabolic Microphone"] = {Parent = game.Workspace["Map"]["Items"]};
-        ["Salt"] = {Parent = game.Workspace["Map"]["Items"]};
-		["Sanity Soda"] = {Parent = game.Workspace["Map"]["Items"]};
-    };
-    ["Events"] = {
-        ["Easter"] = DateTime.now().UnixTimestampMillis <= DateTime.fromLocalTime(2025, 5, 2, 12, 0, 0, 0).UnixTimestampMillis;
-    }
-}
-end)()
-	
-	------------------
-	-- [[ CONFIG ]] --
-	------------------
-	local Config = {
-		["CustomSprint"] = false;
-		["CustomSprintSpeed"] = "13";
-		
-		["Fullbright"] = false;
-		
-		["NoClipDoor"] = false;
-		
-		["ESP"] = false;
-		["ESPList"] = {};
-		
-		["SideStatus"] = false;
-		["SideStatusScale"] = "1";
-	}
-	local Directory = "CristineHakdog/Blair"
-	local File_Name = "Settings.json"
-	Config = Utility:LoadConfig(Config, Directory, File_Name);
+-- ════════════════════════════════════════════════════════════════
+--  GHOST SIDEBAR
+-- ════════════════════════════════════════════════════════════════
+local Ghost        = CreateInfo("Ghost Status")
+local GhostActivity   = Ghost.AddInfo("Activity")
+local GhostLocation   = Ghost.AddInfo("Location")
+local GhostSpeed      = Ghost.AddInfo("WalkSpeed")
+local GhostBlink      = Ghost.AddInfo("Blink")
+local GhostDuration   = Ghost.AddInfo("Duration")
+local GhostDisruption = Ghost.AddInfo("Disrupting")
+local GhostBanshee    = Ghost.AddInfo("Banshee Scream"); GhostBanshee.Visible=false
+local GhostFaejkur    = Ghost.AddInfo("Faejkur Laugh");  GhostFaejkur.Visible=false
+local GhostYama       = Ghost.AddInfo("Yama Roar");      GhostYama.Visible=false
 
-	if PlayerGui.Journal.Background:FindFirstChild("Settings") then PlayerGui.Journal.Background:FindFirstChild("Settings"):Destroy() end;
-	if PlayerGui:FindFirstChild("Statusifier") then PlayerGui:FindFirstChild("Statusifier"):Destroy() end;
-
-	---------------------
-	-- [[ UTILITIES ]] --
-	---------------------
-	do
-		function CreateSettings(Name, Options, Callback)
-			local Enabled = Options and Options.Default or false;
-			if Options and Config[Options.Config] then Enabled = Config[Options.Config] end
-			local Keybind = Options and Options.Keybind or nil;
-			local On = Callback and Callback.On or function() end;
-			local Off = Callback and Callback.Off or function() end;
-
-			local Settings;
-			if PlayerGui.Journal.Background:FindFirstChild("Settings") then
-				Settings = PlayerGui.Journal.Background:FindFirstChild("Settings");
-			else
-				Settings = Utility:Instance("Frame", {
-					Name = "Settings";
-					Parent = PlayerGui.Journal.Background;
-					AnchorPoint = Vector2.new(0, 1);
-					BackgroundColor3 = Color3.fromRGB(10, 5, 5);
-					BackgroundTransparency = 0.15;
-					BorderSizePixel = 0;
-					Size = UDim2.new(1, 0, 0, 38);
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 8); });
-					Utility:Instance("UIStroke", { Color = Color3.fromRGB(120, 20, 20); Thickness = 1.5; });
-					Utility:Instance("UIListLayout", {
-						Padding = UDim.new(0, 4);
-						FillDirection = Enum.FillDirection.Horizontal;
-						HorizontalAlignment = Enum.HorizontalAlignment.Center;
-						VerticalAlignment = Enum.VerticalAlignment.Center;
-					});
-					Utility:Instance("UIPadding", { PaddingLeft = UDim.new(0, 4); PaddingRight = UDim.new(0, 4); });
-				});
-			end
-
-			local Data = {Enabled = Enabled}
-			Data.Button = Utility:Instance("TextButton", {
-				Name = Name;
-				Parent = Settings;
-				BackgroundColor3 = Color3.fromRGB(25, 10, 10);
-				BackgroundTransparency = 0;
-				BorderSizePixel = 0;
-				Size = UDim2.new(0.13, 0, 1, -8);
-				Text = "";
-				Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
-				Utility:Instance("UIStroke", { Color = Color3.fromRGB(80, 15, 15); Thickness = 1; });
-				Utility:Instance("TextLabel", {
-					Name = "Label";
-					AnchorPoint = Vector2.new(0.5, 0.5);
-					BackgroundTransparency = 1;
-					Position = UDim2.new(0.5, 0, 0.42, 0);
-					Size = UDim2.new(0.92, 0, 0.55, 0);
-					Font = Enum.Font.FredokaOne;
-					Text = Name;
-					TextColor3 = Color3.fromRGB(220, 200, 200);
-					TextScaled = true;
-					TextStrokeTransparency = 0.6;
-					TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
-				});
-				Utility:Instance("Frame", {
-					Name = "Toggle";
-					AnchorPoint = Vector2.new(0.5, 1);
-					BackgroundColor3 = Data.Enabled and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(50, 50, 50);
-					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 1, -2);
-					Size = UDim2.new(0.65, 0, 0, 2);
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(1, 0); });
-				});
-			});
-			Data.Toggle = Data.Button["Toggle"];
-
-			-- ========================================================
-			-- AddTextbox: cleaner version with visible label above box
-			-- ========================================================
-			function Data:AddTextbox(Properties, Options)
-				Properties.Text = Options and Config[Options.Config] or Properties.Text or "";
-				local Display = Options and Options.Display or "";
-				local Type = Options and Options.Type or "Text";
-				local Negative = Options and Options.Negative or false;
-
-				-- Wrapper frame to stack label + input
-				local Wrapper = Utility:Instance("Frame", {
-					Parent = Data.Button;
-					BackgroundTransparency = 1;
-					AnchorPoint = Vector2.new(0.5, 0.5);
-					Position = UDim2.new(0.5, 0, 0.5, 0);
-					Size = UDim2.new(0.88, 0, 0.84, 0);
-					Utility:Instance("UIListLayout", {
-						FillDirection = Enum.FillDirection.Vertical;
-						HorizontalAlignment = Enum.HorizontalAlignment.Center;
-						VerticalAlignment = Enum.VerticalAlignment.Center;
-						Padding = UDim.new(0, 1);
-					});
-				});
-
-				-- Small label above
-				Utility:Instance("TextLabel", {
-					Parent = Wrapper;
-					BackgroundTransparency = 1;
-					Size = UDim2.new(1, 0, 0, 11);
-					Font = Enum.Font.FredokaOne;
-					Text = Display;
-					TextColor3 = Color3.fromRGB(160, 120, 120);
-					TextScaled = true;
-					TextXAlignment = Enum.TextXAlignment.Center;
-				});
-
-				-- Input box
-				local Control = Utility:Instance("TextBox", {
-					Parent = Wrapper;
-					BackgroundColor3 = Color3.fromRGB(12, 4, 4);
-					BackgroundTransparency = 0;
-					BorderSizePixel = 0;
-					Size = UDim2.new(1, 0, 0, 16);
-					Font = Enum.Font.FredokaOne;
-					Text = Properties.Text or "";
-					TextColor3 = Color3.fromRGB(230, 210, 210);
-					TextScaled = true;
-					ClearTextOnFocus = false;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
-					Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 20, 20); Thickness = 1; });
-				});
-
-				for Index, Value in pairs(Properties or {}) do
-					if Index ~= "Text" then
-						pcall(function() Control[Index] = Value; end)
-					end
-				end
-
-				if Type == "Integer" then Control:GetPropertyChangedSignal("Text"):Connect(function() Control.Text = string.match(Control.Text, (Negative and "[-]?" or "").."%d*") or ""; end) end
-				if Type == "Number" then Control:GetPropertyChangedSignal("Text"):Connect(function() Control.Text = string.match(Control.Text, (Negative and "[-]?" or "").."%d*[%.]?%d*") or ""; end) end
-
-				Control.FocusLost:Connect(function()
-					if Options and Options.Config then
-						Config[Options.Config] = Control.Text;
-						Utility:SaveConfig(Config, Directory, File_Name);
-					end
-				end)
-
-				return Control;
-			end;
-
-			-- ========================================================
-			-- AddESPPanel: replaces dropdown with a floating toggle panel
-			-- Opens/closes cleanly, uses Click (not Down) to avoid scroll mis-taps
-			-- ========================================================
-			function Data:AddESPPanel(Options)
-				local Selected = (Options and Config[Options.Config]) or {};
-				local List = (Options and Options.List) or {};
-
-				-- The open/close button on the settings bar button
-				local OpenBtn = Utility:Instance("TextButton", {
-					Parent = Data.Button;
-					AnchorPoint = Vector2.new(0.5, 0.5);
-					BackgroundColor3 = Color3.fromRGB(15, 5, 5);
-					BackgroundTransparency = 0;
-					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 0.5, 0);
-					Size = UDim2.new(0.82, 0, 0.58, 0);
-					Font = Enum.Font.FredokaOne;
-					Text = "☰ List";
-					TextColor3 = Color3.fromRGB(220, 200, 200);
-					TextScaled = true;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
-					Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 20, 20); Thickness = 1; });
-				});
-
-				-- Floating panel — parented to PlayerGui so it sits ABOVE everything
-				-- and doesn't block the settings bar
-				local PanelGui = Utility:Instance("ScreenGui", {
-					Name = "ESPPanel";
-					Parent = PlayerGui;
-					ResetOnSpawn = false;
-					DisplayOrder = 99;
-				});
-
-				-- Dark overlay to capture outside clicks (closes panel)
-				local Overlay = Utility:Instance("TextButton", {
-					Parent = PanelGui;
-					BackgroundColor3 = Color3.fromRGB(0, 0, 0);
-					BackgroundTransparency = 0.6;
-					BorderSizePixel = 0;
-					Size = UDim2.new(1, 0, 1, 0);
-					Text = "";
-					ZIndex = 1;
-					Visible = false;
-				});
-
-				-- Main panel
-				local Panel = Utility:Instance("Frame", {
-					Parent = PanelGui;
-					AnchorPoint = Vector2.new(0.5, 0.5);
-					BackgroundColor3 = Color3.fromRGB(10, 4, 4);
-					BackgroundTransparency = 0;
-					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 0.5, 0);
-					Size = UDim2.new(0, 320, 0, 380);
-					ZIndex = 2;
-					Visible = false;
-					ClipsDescendants = true;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 12); });
-					Utility:Instance("UIStroke", { Color = Color3.fromRGB(160, 20, 20); Thickness = 2; });
-				});
-
-				-- Title bar
-				local TitleBar = Utility:Instance("Frame", {
-					Parent = Panel;
-					BackgroundColor3 = Color3.fromRGB(20, 5, 5);
-					BackgroundTransparency = 0;
-					BorderSizePixel = 0;
-					Size = UDim2.new(1, 0, 0, 36);
-					ZIndex = 3;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 12); });
-					Utility:Instance("TextLabel", {
-						AnchorPoint = Vector2.new(0, 0.5);
-						BackgroundTransparency = 1;
-						Position = UDim2.new(0, 12, 0.5, 0);
-						Size = UDim2.new(0.7, 0, 1, 0);
-						Font = Enum.Font.FredokaOne;
-						Text = "ESP Targets";
-						TextColor3 = Color3.fromRGB(200, 60, 60);
-						TextScaled = true;
-						TextXAlignment = Enum.TextXAlignment.Left;
-						ZIndex = 3;
-					});
-				});
-
-				-- Close button in title bar
-				local CloseBtn = Utility:Instance("TextButton", {
-					Parent = TitleBar;
-					AnchorPoint = Vector2.new(1, 0.5);
-					BackgroundColor3 = Color3.fromRGB(120, 10, 10);
-					BackgroundTransparency = 0;
-					BorderSizePixel = 0;
-					Position = UDim2.new(1, -8, 0.5, 0);
-					Size = UDim2.new(0, 24, 0, 24);
-					Font = Enum.Font.FredokaOne;
-					Text = "✕";
-					TextColor3 = Color3.fromRGB(255, 200, 200);
-					TextScaled = true;
-					ZIndex = 4;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 6); });
-				});
-
-				-- Scrolling frame for items
-				local Scroll = Utility:Instance("ScrollingFrame", {
-					Parent = Panel;
-					AnchorPoint = Vector2.new(0.5, 1);
-					BackgroundTransparency = 1;
-					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 1, -8);
-					Size = UDim2.new(1, -16, 1, -48);
-					ZIndex = 3;
-					AutomaticCanvasSize = Enum.AutomaticSize.Y;
-					CanvasSize = UDim2.new(0, 0, 0, 0);
-					ScrollBarImageColor3 = Color3.fromRGB(180, 40, 40);
-					ScrollBarThickness = 4;
-					ScrollingDirection = Enum.ScrollingDirection.Y;
-					Utility:Instance("UIGridLayout", {
-						CellSize = UDim2.new(0.5, -8, 0, 40);
-						CellPadding = UDim2.new(0, 6, 0, 6);
-						SortOrder = Enum.SortOrder.LayoutOrder;
-					});
-					Utility:Instance("UIPadding", {
-						PaddingLeft = UDim.new(0, 6);
-						PaddingRight = UDim.new(0, 6);
-						PaddingTop = UDim.new(0, 4);
-						PaddingBottom = UDim.new(0, 4);
-					});
-				});
-
-				-- Build toggle rows for each ESP item
-				local ItemButtons = {};
-				for _, Item in pairs(List) do
-					local IsOn = table.find(Selected, Item) ~= nil;
-
-					local Row = Utility:Instance("Frame", {
-						Name = Item;
-						Parent = Scroll;
-						BackgroundColor3 = IsOn and Color3.fromRGB(80, 10, 10) or Color3.fromRGB(22, 8, 8);
-						BackgroundTransparency = 0;
-						BorderSizePixel = 0;
-						Size = UDim2.new(0, 0, 0, 0); -- controlled by UIGridLayout
-						ZIndex = 4;
-						Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 8); });
-						Utility:Instance("UIStroke", { Color = IsOn and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(60, 12, 12); Thickness = 1.2; });
-					});
-
-					-- Item name label
-					Utility:Instance("TextLabel", {
-						Parent = Row;
-						AnchorPoint = Vector2.new(0, 0.5);
-						BackgroundTransparency = 1;
-						Position = UDim2.new(0, 8, 0.5, 0);
-						Size = UDim2.new(1, -44, 1, 0);
-						Font = Enum.Font.FredokaOne;
-						Text = Item;
-						TextColor3 = IsOn and Color3.fromRGB(255, 200, 200) or Color3.fromRGB(180, 150, 150);
-						TextScaled = true;
-						TextXAlignment = Enum.TextXAlignment.Left;
-						TextTruncate = Enum.TextTruncate.AtEnd;
-						ZIndex = 5;
-					});
-
-					-- Toggle pill on the right
-					local Pill = Utility:Instance("Frame", {
-						Parent = Row;
-						AnchorPoint = Vector2.new(1, 0.5);
-						BackgroundColor3 = IsOn and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(50, 50, 50);
-						BorderSizePixel = 0;
-						Position = UDim2.new(1, -8, 0.5, 0);
-						Size = UDim2.new(0, 28, 0, 14);
-						ZIndex = 5;
-						Utility:Instance("UICorner", { CornerRadius = UDim.new(1, 0); });
-					});
-
-					-- Pill dot
-					local Dot = Utility:Instance("Frame", {
-						Parent = Pill;
-						AnchorPoint = Vector2.new(IsOn and 1 or 0, 0.5);
-						BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-						BorderSizePixel = 0;
-						Position = IsOn and UDim2.new(1, -2, 0.5, 0) or UDim2.new(0, 2, 0.5, 0);
-						Size = UDim2.new(0, 10, 0, 10);
-						ZIndex = 6;
-						Utility:Instance("UICorner", { CornerRadius = UDim.new(1, 0); });
-					});
-
-					local function SetToggle(on)
-						IsOn = on;
-						-- Update selected list
-						local idx = table.find(Selected, Item);
-						if on and not idx then
-							table.insert(Selected, Item);
-						elseif not on and idx then
-							table.remove(Selected, idx);
-						end
-						-- Update visual
-						Row.BackgroundColor3 = on and Color3.fromRGB(80, 10, 10) or Color3.fromRGB(22, 8, 8);
-						Row["UIStroke"].Color = on and Color3.fromRGB(200, 30, 30) or Color3.fromRGB(60, 12, 12);
-						Row["TextLabel"].TextColor3 = on and Color3.fromRGB(255, 200, 200) or Color3.fromRGB(180, 150, 150);
-						Pill.BackgroundColor3 = on and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(50, 50, 50);
-						Dot.AnchorPoint = on and Vector2.new(1, 0.5) or Vector2.new(0, 0.5);
-						Dot.Position = on and UDim2.new(1, -2, 0.5, 0) or UDim2.new(0, 2, 0.5, 0);
-
-						if Options and Options.Config then
-							Config[Options.Config] = Selected;
-							Utility:SaveConfig(Config, Directory, File_Name);
-						end
-						if Options and Options.Callback then Options.Callback(Selected); end
-					end
-
-					-- Use MouseButton1Click to avoid accidental toggles while scrolling
-					local ClickButton = Utility:Instance("TextButton", {
-						Parent = Row;
-						BackgroundTransparency = 1;
-						BorderSizePixel = 0;
-						Size = UDim2.new(1, 0, 1, 0);
-						Text = "";
-						ZIndex = 7;
-					});
-					ClickButton.MouseButton1Click:Connect(function()
-						SetToggle(not IsOn);
-					end)
-
-					ItemButtons[Item] = { Row = Row, SetToggle = SetToggle };
-				end
-
-				-- Open / close logic
-				local PanelOpen = false;
-				local function OpenPanel()
-					PanelOpen = true;
-					Overlay.Visible = true;
-					Panel.Visible = true;
-					OpenBtn.Text = "✕ Close";
-				end
-				local function ClosePanel()
-					PanelOpen = false;
-					Overlay.Visible = false;
-					Panel.Visible = false;
-					OpenBtn.Text = "☰ List";
-				end
-
-				OpenBtn.MouseButton1Click:Connect(function()
-					if PanelOpen then ClosePanel() else OpenPanel() end
-				end)
-				CloseBtn.MouseButton1Click:Connect(ClosePanel)
-				Overlay.MouseButton1Click:Connect(ClosePanel)
-
-				return { Selected = Selected; ItemButtons = ItemButtons; };
-			end
-
-			function Data:AddButton(Properties, Options)
-				local Display = Options and Options.Display or "";
-				local Control = { Debounce = false; };
-				Control.Button = Utility:Instance("TextButton", {
-					Parent = Data.Button;
-					AnchorPoint = Vector2.new(0.5, 1);
-					BackgroundColor3 = Color3.fromRGB(0, 0, 0);
-					BackgroundTransparency = 0.25;
-					BorderSizePixel = 0;
-					Position = UDim2.new(0.5, 0, 0, -2);
-					Size = UDim2.new(0.8, 0, 0.8, 0);
-					Font = Enum.Font.SourceSansBold;
-					Text = Display;
-					TextColor3 = Color3.fromRGB(255, 255, 255);
-					TextScaled = true;
-					Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 5); });
-				});
-				for Index, Value in pairs(Properties or {}) do
-					if Control.Button[Index] then Control.Button[Index] = Value; end
-				end;
-
-				Control.Button.MouseButton1Down:Connect(function()
-					if Control.Debounce then return; end
-					if Options.Callback then Options.Callback(); end
-
-					Control.Debounce = true;
-					task.spawn(function()
-						task.wait(1);
-						Control.Debounce = false;
-					end)
-				end)
-
-				return Control;
-			end
-			
-			function Data:Set(Value)
-				Data.Enabled = Value;
-				if Options and Options.Config then
-					Config[Options.Config] = Data.Enabled;
-					Utility:SaveConfig(Config, Directory, File_Name);
-				end
-				if Data.Enabled then
-					pcall(function()
-						On();
-						Data.Toggle.BackgroundColor3 = Color3.fromRGB(180, 0, 0);
-						Data.Button.BackgroundColor3 = Color3.fromRGB(40, 10, 10);
-						Data.Button["UIStroke"].Color = Color3.fromRGB(160, 20, 20);
-					end)
-				else
-					pcall(function()
-						Off();
-						Data.Toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50);
-						Data.Button.BackgroundColor3 = Color3.fromRGB(25, 10, 10);
-						Data.Button["UIStroke"].Color = Color3.fromRGB(80, 15, 15);
-					end)
-				end
-			end
-			Data:Set(Data.Enabled);
-			
-			Data.Button.MouseButton1Down:Connect(function() Data:Set(not Data.Enabled); end)
-			if UserIS.KeyboardEnabled and UserIS.MouseEnabled and not UserIS.TouchEnabled then
-				if Keybind ~= nil then
-					Data.Button["Label"].Text = Name .." [".. Keybind.Name .."]";
-					UserIS.InputBegan:Connect(function(input, gameProcessed)
-						if gameProcessed then return; end
-						if input.KeyCode == Keybind then Data:Set(not Data.Enabled); end
-					end)
-				end
-			end
-
-			return Data;
-		end
-		function CreateInfo(Name, Options)
-			local SideInfo;
-			if PlayerGui:FindFirstChild("Statusifier") then
-				SideInfo = PlayerGui:FindFirstChild("Statusifier");
-			else
-				SideInfo = Utility:Instance("ScreenGui", {
-					Name = "Statusifier";
-					Parent = PlayerGui;
-					ResetOnSpawn = false;
-					Enabled = Config["SideStatus"];
-					Utility:Instance("Frame", {
-						Name = "Container";
-						BackgroundTransparency = 1;
-						Position = UDim2.new(0, 8, 0.38, 0);
-						Size = UDim2.new(0, 170, 0, 0);
-						Utility:Instance("UIListLayout", { Padding = UDim.new(0, 6); });
-						Utility:Instance("UIScale", { Scale = 1; });
-					});
-				});
-			end
-
-			local Data = {}
-			Data.Frame = Utility:Instance("Frame", {
-				Name = Name;
-				Parent = SideInfo["Container"];
-				AutomaticSize = Enum.AutomaticSize.Y;
-				BackgroundColor3 = Color3.fromRGB(8, 3, 3);
-				BackgroundTransparency = 0.1;
-				BorderSizePixel = 0;
-				Size = UDim2.new(1, 0, 0, 0);
-				Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 8); });
-				Utility:Instance("UIStroke", { Color = Color3.fromRGB(100, 15, 15); Thickness = 1; });
-				Utility:Instance("UIPadding", { PaddingLeft = UDim.new(0, 6); PaddingRight = UDim.new(0, 6); PaddingBottom = UDim.new(0, 4); });
-				-- Section header
-				Utility:Instance("TextLabel", {
-					BackgroundTransparency = 1;
-					Size = UDim2.new(1, 0, 0, 18);
-					Font = Enum.Font.FredokaOne;
-					Text = "⚠ "..Name:upper();
-					TextColor3 = Color3.fromRGB(180, 40, 40);
-					TextScaled = true;
-					TextXAlignment = Enum.TextXAlignment.Left;
-					TextStrokeTransparency = 0.5;
-				});
-				Utility:Instance("Frame", {
-					AutomaticSize = Enum.AutomaticSize.Y;
-					BackgroundTransparency = 1;
-					Position = UDim2.new(0, 0, 0, 20);
-					Size = UDim2.new(1, 0, 0, 0);
-					Utility:Instance("UIListLayout", { Padding = UDim.new(0, 2); });
-				});
-			});
-			Data.List = Data.Frame["Frame"];
-			Data.AddInfo = function(Text)
-				return Utility:Instance("TextLabel", {
-					Parent = Data.List;
-					BackgroundTransparency = 1;
-					Size = UDim2.new(1, 0, 0, 16);
-					Font = Enum.Font.SourceSansBold;
-					Text = Text;
-					TextColor3 = Color3.fromRGB(220, 200, 200);
-					TextScaled = true;
-					TextXAlignment = Enum.TextXAlignment.Left;
-					TextStrokeTransparency = 0.7;
-					TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
-				});
-			end;
-
-			return Data;
-		end
-		function CreateESP(Type, Properties)
-			local Type = Type or "Text";
-			local Data = {};
-			if Type == "Text" then
-				if Properties.ParentText and Properties.ParentText:FindFirstChild("ESP_Text") then
-					Data.ESP = Properties.ParentText["ESP_Text"];
-					Data.ESP.Size = Properties.Size or UDim2.new(5, 0, 2, 0);
-					Data.ESP.StudsOffset = Properties.StudsOffset or Vector3.new(0, 2, 0);
-					Data.ESP.Enabled = Properties.Enabled or false;
-					Data.ESP["Title"].Text = Properties.Text;
-					Data.ESP["Title"].TextColor3 = Properties.Color or Color3.fromRGB(255, 255, 255);
-					if Properties.Distance and Data.ESP:FindFirstChild("Distance") then
-						Data.Distance = Data.ESP["Distance"];
-						Data.Distance.TextColor3 = Properties.Color or Color3.fromRGB(255, 255, 255);
-					end
-				elseif Properties.Parent and Properties.Parent:FindFirstChild("ESP_Text") then
-					Data.ESP = Properties.Parent["ESP_Text"];
-					Data.ESP.Size = Properties.Size or UDim2.new(5, 0, 2, 0);
-					Data.ESP.StudsOffset = Properties.StudsOffset or Vector3.new(0, 2, 0);
-					Data.ESP.Enabled = Properties.Enabled or false;
-					Data.ESP["Title"].Text = Properties.Text;
-					Data.ESP["Title"].TextColor3 = Properties.Color or Color3.fromRGB(255, 255, 255);
-					if Properties.Distance and Data.ESP:FindFirstChild("Distance") then
-						Data.Distance = Data.ESP["Distance"];
-						Data.Distance.TextColor3 = Properties.Color or Color3.fromRGB(255, 255, 255);
-					end
-				else
-					Data.ESP = Utility:Instance("BillboardGui", {
-						Name = "ESP_Text";
-						Parent = Properties.ParentText or Properties.Parent;
-						ResetOnSpawn = Properties.ResetOnSpawn or false;
-						AlwaysOnTop = true;
-						Enabled = Properties.Enabled or false;
-						Size = Properties.Size or UDim2.new(5, 0, 2, 0);
-						StudsOffset = Properties.StudsOffset or Vector3.new(0, 2, 0);
-						Utility:Instance("TextLabel", {
-							Name = "Title";
-							BackgroundTransparency = 1;
-							Size = UDim2.new(1, 0, 0.5, 0);
-							Font = Enum.Font.FredokaOne;
-							Text = Properties.Text;
-							TextColor3 = Properties.Color or Color3.fromRGB(255, 255, 255);
-							TextScaled = true;
-						});
-					});
-					if Properties.Distance then
-						Data.Distance = Utility:Instance("TextLabel", {
-							Name = "Distance";
-							Parent = Data.ESP;
-							BackgroundTransparency = 1;
-							Position = UDim2.new(0, 0, 0.5, 0);
-							Size = UDim2.new(1, 0, 0.5, 0);
-							Font = Enum.Font.FredokaOne;
-							Text = "0m";
-							TextColor3 = Properties.Color or Color3.fromRGB(255, 255, 255);
-							TextScaled = true;
-						});
-					end
-				end
-				if Properties.Distance then
-					task.spawn(function()
-						while task.wait() do
-							if Data.Destroyed then break; end
-							if not Properties.Distance then break; end
-							pcall(function() Data.Distance.Text = (math.floor((Properties.Distance.Position - LocalPlayer.Character.PrimaryPart.Position).Magnitude * 100) / 100) .."m"; end)
-						end
-					end)
-				end
-				return setmetatable({
-					ESP = Data.ESP;
-					Distance = Data.Distance;
-					Enable = function() pcall(function() Data.ESP.Enabled = true; end); end;
-					Disable = function() pcall(function() Data.ESP.Enabled = false; end); end;
-					Destroy = function() pcall(function() Data.Destroyed = true; Data.ESP:Destroy(); end); end;
-				}, {});
-			elseif Type == "Highlight" then
-				if Properties.ParentHighlight and Properties.ParentHighlight:FindFirstChild("ESP_Highlight") then Properties.ParentHighlight["ESP_Highlight"]:Destroy(); end
-				if Properties.Parent and Properties.Parent:FindFirstChild("ESP_Highlight") then Properties.Parent["ESP_Highlight"]:Destroy(); end
-				Data.ESP = Utility:Instance("Highlight", {
-					Name = "ESP_Highlight";
-					Parent = Properties.ParentHighlight or Properties.Parent;
-					Enabled = Properties.Enabled or false;
-					FillColor = Properties.Color or Color3.fromRGB(255, 255, 255);
-					FillTransparency = Properties.FillTransparency or 0.75;
-				});
-				return setmetatable({
-					ESP = Data.ESP;
-					Enable = function() pcall(function() Data.ESP.Enabled = true; end); end;
-					Disable = function() pcall(function() Data.ESP.Enabled = false; end); end;
-					Destroy = function() pcall(function() Data.ESP:Destroy(); end); end;
-				}, {});
-			elseif Type == "Text & Highlight" then
-				Data.TextESP = CreateESP("Text", Properties);
-				Data.HighlightESP = CreateESP("Highlight", Properties);
-				return setmetatable({
-					TextESP = Data.TextESP;
-					HighlightESP = Data.HighlightESP;
-					Enable = function() pcall(function() Data.TextESP:Enable(); Data.HighlightESP:Enable(); end); end;
-					Disable = function() pcall(function() Data.TextESP:Disable(); Data.HighlightESP:Disable(); end); end;
-					Destroy = function() pcall(function() Data.TextESP:Destroy(); Data.HighlightESP:Destroy(); end); end;
-				}, {});
-			elseif Type == "Backpack" then
-				if Properties.Parent and Properties.Parent:FindFirstChild("ESP_Backpack") then
-					Data.ESP = Properties.Parent["ESP_Backpack"];
-					Data.ESP.MaxDistance = Properties.MaxDistance or 15;
-					Data.ESP.Size = Properties.Size or UDim2.new(2, 0, 2, 0);
-					Data.ESP.StudsOffset = Properties.StudsOffset or Vector3.new(2, 1, 1);
-					Data.ESP.Enabled = Properties.Enabled or false;
-				else
-					Data.ESP = Utility:Instance("BillboardGui", {
-						Name = "ESP_Backpack";
-						Parent = Properties.Parent;
-						ResetOnSpawn = Properties.ResetOnSpawn or false;
-						AlwaysOnTop = true;
-						MaxDistance = Properties.MaxDistance or 15;
-						Size = Properties.Size or UDim2.new(2, 0, 2, 0);
-						StudsOffset = Properties.StudsOffset or Vector3.new(2, 1, 1);
-						Enabled = Properties.Enabled or false;
-						Utility:Instance("Frame", {
-							BackgroundTransparency = 1;
-							Size = UDim2.new(1, 0, 1, 0);
-							Utility:Instance("UIListLayout", { HorizontalAlignment = Enum.HorizontalAlignment.Center; });
-						});
-					});
-				end
-				Data.Slots = {};
-				for Slot = 1, 5 do
-					if Data.ESP["Frame"]:FindFirstChild("Slot_"..tostring(Slot)) then
-						Data.Slots[Slot] = Data.ESP["Frame"]:FindFirstChild("Slot_"..tostring(Slot));
-					else
-						Data.Slots[Slot] = Utility:Instance("TextLabel", {
-							Name = "Slot_"..tostring(Slot);
-							Parent = Data.ESP["Frame"];
-							BackgroundTransparency = 1;
-							Size = UDim2.new(1, 0, 0.2, 0);
-							Font = Enum.Font.SourceSansBold;
-							Text = "";
-							TextColor3 = Color3.fromRGB(255, 255, 255);
-							TextScaled = true;
-							TextStrokeTransparency = 0;
-						});
-					end
-				end
-				return setmetatable({
-					ESP = Data.ESP;
-					Slots = Data.Slots;
-					Enable = function() pcall(function() Data.ESP.Enabled = true; end); end;
-					Disable = function() pcall(function() Data.ESP.Enabled = false; end); end;
-					Destroy = function() pcall(function() Data.Destroyed = true; Data.ESP:Destroy(); end); end;
-				}, {});
-			end
-		end
-	end
-
-	----------------------
-	-- [[ INITIALIZE ]] --
-	----------------------
-	local FreecamModule = (function()
---// FREECAM MODULE
-local Freecam = {
-	Enabled = false;
-	INPUT_PRIORITY = Enum.ContextActionPriority.High.Value;
-
-	NAV_GAIN = Vector3.new(1, 1, 1) * 64;
-	PAN_GAIN = Vector2.new(0.75, 1) * 8;
-	FOV_GAIN = 300;
-
-	PITCH_LIMIT = math.rad(90);
-
-	VEL_STIFFNESS = 1.5;
-	PAN_STIFFNESS = 1.0;
-	FOV_STIFFNESS = 4.0;
-	
-	IgnoreGUI = {};
-}
-
-local pi    = math.pi
-local abs   = math.abs
-local clamp = math.clamp
-local exp   = math.exp
-local rad   = math.rad
-local sign  = math.sign
-local sqrt  = math.sqrt
-local tan   = math.tan
-
-local ContextActionService	= game:GetService("ContextActionService")
-local Players				= game:GetService("Players")
-local RunService			= game:GetService("RunService")
-local StarterGui			= game:GetService("StarterGui")
-local UserInputService		= game:GetService("UserInputService")
-local GuiService			= game:GetService("GuiService")
-local Workspace				= game:GetService("Workspace")
-
-local Utility				= Utility
-
-local LocalPlayer = Players.LocalPlayer
-if not LocalPlayer then
-	Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
-	LocalPlayer = Players.LocalPlayer
+local function FindParabolic(Obj)
+    for _,p in pairs(Obj:GetChildren()) do
+        if p.Name~="Parabolic Microphone" then continue end
+        if p:FindFirstChild("Handle") then
+            if p.Handle:FindFirstChild("BansheeScream") and p.Handle["BansheeScream"].Playing then GhostBanshee.Visible=true end
+            if p.Handle:FindFirstChild("FaeLaugh")      and p.Handle["FaeLaugh"].Playing      then GhostFaejkur.Visible=true end
+        end
+    end
 end
 
-local Camera = Workspace.CurrentCamera
-Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
-	local newCamera = Workspace.CurrentCamera
-	if newCamera then
-		Camera = newCamera
-	end
+Utility:Thread("Ghost", function()
+    while task.wait() do
+        GhostActivity.Text = "Activity: "..RStorage["Activity"].Value
+        GhostDisruption.Visible = RStorage["Disruption"].Value and true or false
+        if game.Workspace:FindFirstChild("Ghost") then
+            if game.Workspace["Ghost"]:FindFirstChild("Hunting") then
+                if game.Workspace["Ghost"]["Hunting"].Value then
+                    for _,v in pairs({GhostLocation,GhostSpeed,GhostBlink,GhostDuration}) do v.Visible=true end
+                else
+                    GhostLocation.Visible=true
+                end
+            end
+            pcall(function()
+                local G = game.Workspace:WaitForChild("Ghost",5)
+                GhostLocation.Text = G:WaitForChild("Zone",5).Value.Name or ""
+                GhostSpeed.Text    = "Walk Speed: "..math.floor(G.Humanoid.WalkSpeed*1000)/1000
+                GhostDuration.Text = "Duration: "..RStorage["HuntDuration"].Value
+            end)
+        else
+            for _,v in pairs({GhostLocation,GhostSpeed,GhostBlink,GhostDuration}) do v.Visible=false end
+        end
+        if not GhostBanshee.Visible or not GhostFaejkur.Visible then
+            for _,P in pairs(Players:GetChildren()) do if P.Character then FindParabolic(P.Character) end end
+            FindParabolic(game.Workspace["Map"]["Items"])
+        end
+    end
+end):Start()
+
+if game.Workspace:FindFirstChild("Ghost") then
+    local stamp=tick()
+    pcall(function()
+        blinkConnection = game.Workspace["Ghost"]:WaitForChild("Head"):GetPropertyChangedSignal("Transparency"):Connect(function()
+            GhostBlink.Text = "Blink: "..math.floor((tick()-stamp)*1000)/1000 .."s"; stamp=tick()
+        end)
+    end)
+end
+
+game.Workspace.ChildAdded:Connect(function(inst)
+    if inst.Name~="Ghost" then return end
+    if inst:WaitForChild("Highlight",1) then inst["Highlight"]:Destroy() end
+    GhostESP["Text"]      = CreateESP("Text",      { Text="[Ghost]"; Distance=inst.PrimaryPart; Parent=inst:WaitForChild("Head",1); Color=Color3.fromRGB(255,0,0) })
+    GhostESP["Highlight"] = CreateESP("Highlight", { Parent=inst; Color=Color3.fromRGB(255,0,0) })
+    local stamp=tick()
+    pcall(function()
+        blinkConnection = inst:WaitForChild("Head",1):GetPropertyChangedSignal("Transparency"):Connect(function()
+            GhostBlink.Text="Blink: "..math.floor((tick()-stamp)*1000)/1000 .."s"; stamp=tick()
+        end)
+    end)
+    if inst:WaitForChild("Hunting") then if not inst["Hunting"].Value then ManifestCount+=1 end end
+end)
+game.Workspace.ChildRemoved:Connect(function(inst)
+    if inst.Name~="Ghost" then return end
+    pcall(function() blinkConnection:Disconnect() end)
 end)
 
-local GUI = {} do
-	GUI.UI = Utility:Instance("ScreenGui", {
-		Name = "MobileFreecam";
-		Parent = LocalPlayer.PlayerGui;
-		Enabled = false;
-		Utility:Instance("Frame", {
-			Name = "Controls";
-			BackgroundTransparency = 1;
-			Position = UDim2.new(0, 35, 1, -179);
-			Size = UDim2.new(0, 155, 0, 155);
-		});
-	});
-	GUI.Forward = Utility:Instance("Frame", {
-		Parent = GUI.UI["Controls"];
-		BackgroundTransparency = 0.82;
-		Position = UDim2.new(0.333, 0, 0, 0);
-		Size = UDim2.new(0.333, 0, 0.333, 0);
-		Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
-		Utility:Instance("TextButton", { BackgroundTransparency = 1; Size = UDim2.new(1, 0, 1, 0); Text = ""; });
-		Utility:Instance("TextLabel", { BackgroundTransparency = 1; Rotation = 90; Size = UDim2.new(1, 0, 1, 0); Font = Enum.Font.FredokaOne; Text = "<"; TextScaled = true; TextStrokeTransparency = 0.8; })
-	});
-	GUI.Backward = Utility:Instance("Frame", {
-		Parent = GUI.UI["Controls"];
-		BackgroundTransparency = 0.82;
-		Position = UDim2.new(0.333, 0, 0.667, 0);
-		Size = UDim2.new(0.333, 0, 0.333, 0);
-		Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
-		Utility:Instance("TextButton", { BackgroundTransparency = 1; Size = UDim2.new(1, 0, 1, 0); Text = ""; });
-		Utility:Instance("TextLabel", { BackgroundTransparency = 1; Rotation = -90; Size = UDim2.new(1, 0, 1, 0); Font = Enum.Font.FredokaOne; Text = "<"; TextScaled = true; TextStrokeTransparency = 0.8; })
-	});
-	GUI.Left = Utility:Instance("Frame", {
-		Parent = GUI.UI["Controls"];
-		BackgroundTransparency = 0.82;
-		Position = UDim2.new(0, 0, 0.333, 0);
-		Size = UDim2.new(0.333, 0, 0.333, 0);
-		Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
-		Utility:Instance("TextButton", { BackgroundTransparency = 1; Size = UDim2.new(1, 0, 1, 0); Text = ""; });
-		Utility:Instance("TextLabel", { BackgroundTransparency = 1; Rotation = 0; Size = UDim2.new(1, 0, 1, 0); Font = Enum.Font.FredokaOne; Text = "<"; TextScaled = true; TextStrokeTransparency = 0.8; })
-	});
-	GUI.Right = Utility:Instance("Frame", {
-		Parent = GUI.UI["Controls"];
-		BackgroundTransparency = 0.82;
-		Position = UDim2.new(0.667, 0, 0.333, 0);
-		Size = UDim2.new(0.333, 0, 0.333, 0);
-		Utility:Instance("UICorner", { CornerRadius = UDim.new(0, 4); });
-		Utility:Instance("TextButton", { BackgroundTransparency = 1; Size = UDim2.new(1, 0, 1, 0); Text = ""; });
-		Utility:Instance("TextLabel", { BackgroundTransparency = 1; Rotation = 180; Size = UDim2.new(1, 0, 1, 0); Font = Enum.Font.FredokaOne; Text = "<"; TextScaled = true; TextStrokeTransparency = 0.8; })
-	});
-	
-	if LocalPlayer.PlayerGui:FindFirstChild("TouchGui") then
-		local TouchGUI = LocalPlayer.PlayerGui["TouchGui"];
-		function GUI:Show() GUI.UI.Enabled = true; TouchGUI.Parent = nil end
-		function GUI:Hide() GUI.UI.Enabled = false; TouchGUI.Parent = LocalPlayer.PlayerGui; end
-	end
+-- ════════════════════════════════════════════════════════════════
+--  EVIDENCE SIDEBAR
+-- ════════════════════════════════════════════════════════════════
+if RStorage:FindFirstChild("ActiveChallenges") then
+    if not (RStorage["ActiveChallenges"]:FindFirstChild("evidencelessOne") and RStorage["ActiveChallenges"]:FindFirstChild("evidencelessTwo")) then
+        local EvidenceInfo = CreateInfo("Evidences")
+        local Evidences = {}
+        for _,e in pairs({"EMF Level 5","Ultraviolet","Freezing Temp.","Ghost Orbs","Ghost Writing","Spirit Box","SLS Anomaly"}) do
+            Evidences[e] = EvidenceInfo.AddInfo(e); Evidences[e].Visible=false
+        end
+        local function FindSpiritBox(Obj)
+            for _,sb in pairs(Obj:GetChildren()) do
+                if sb.Name~="Spirit Box" then continue end
+                for _,talk in pairs(sb:FindFirstChild("GhostTalk"):GetChildren()) do
+                    if not talk.Playing then continue end
+                    if talk.Name=="GhostTalk5" then GhostYama.Visible=true end
+                    Evidences["Spirit Box"].Visible=true
+                end
+            end
+        end
+        local function FindEMF(Obj)
+            for _,emf in pairs(Obj:GetChildren()) do
+                if emf.Name~="EMF Reader" then continue end
+                if not emf:FindFirstChild("5") then continue end
+                if emf["5"].Material~=Enum.Material.Neon then continue end
+                Evidences["EMF Level 5"].Visible=true
+            end
+        end
+        if RStorage["Remotes"]:FindFirstChild("TextChatServicer") then
+            RStorage["Remotes"]["TextChatServicer"].OnClientEvent:Connect(function() Evidences["Spirit Box"].Visible=true end)
+        end
+        Utility:Thread("Evidence", function()
+            while task.wait() do
+                if not Evidences["EMF Level 5"].Visible and not game.Workspace:FindFirstChild("Ghost") then
+                    for _,P in pairs(Players:GetChildren()) do if P.Character then FindEMF(P.Character) end end
+                    FindEMF(game.Workspace["Map"]["Items"])
+                end
+                if not Evidences["Ultraviolet"].Visible and #game.Workspace["Map"]["Prints"]:GetChildren()>0 then
+                    for _,p in pairs(game.Workspace["Map"]["Prints"]:GetChildren()) do
+                        if not table.find({"Script","LocalScript"}, p.ClassName) then Evidences["Ultraviolet"].Visible=true end
+                    end
+                end
+                if not Evidences["Freezing Temp."].Visible and LowestTemp then
+                    if LowestTemp["_____Temperature"].Value<0.1 and LowestTemp["_____Temperature"]["_____LocalBaseTemp"].Value<=0 then Evidences["Freezing Temp."].Visible=true end
+                end
+                if not Evidences["Ghost Orbs"].Visible and #game.Workspace["Map"]["Orbs"]:GetChildren()>0 then
+                    for _,o in pairs(game.Workspace["Map"]["Orbs"]:GetChildren()) do
+                        if not table.find({"Script","LocalScript"}, o.ClassName) then Evidences["Ghost Orbs"].Visible=true end
+                    end
+                end
+                if not Evidences["Ghost Writing"].Visible then
+                    for _,it in pairs(game.Workspace["Map"]["Items"]:GetChildren()) do
+                        if it.Name=="Ghost Writing Book" and it:FindFirstChild("Written") and it["Written"].Value then Evidences["Ghost Writing"].Visible=true; break end
+                    end
+                end
+                if not Evidences["Spirit Box"].Visible then
+                    for _,P in pairs(Players:GetChildren()) do if P.Character then FindSpiritBox(P.Character) end end
+                    FindSpiritBox(game.Workspace["Map"]["Items"])
+                end
+                if not Evidences["SLS Anomaly"].Visible and not game.Workspace:FindFirstChild("Ghost") then
+                    for _,inst in pairs(game.Workspace:GetChildren()) do
+                        if inst.ClassName~="Model" then continue end
+                        if Players:FindFirstChild(inst.Name) then continue end
+                        if inst.Name=="Ghost" then continue end
+                        if string.find(inst.Name,"SLS_") then Evidences["SLS Anomaly"].Visible=true end
+                    end
+                end
+            end
+        end):Start()
+    end
 end
 
-local Spring = {} do
-	Spring.__index = Spring
-
-	function Spring.new(freq, pos)
-		local self = setmetatable({}, Spring)
-		self.f = freq
-		self.p = pos
-		self.v = pos*0
-		return self
-	end
-
-	function Spring:Update(dt, goal)
-		local f = self.f*2*pi
-		local p0 = self.p
-		local v0 = self.v
-
-		local offset = goal - p0
-		local decay = exp(-f*dt)
-
-		local p1 = goal + (v0*dt - offset*(f*dt + 1))*decay
-		local v1 = (f*dt*(offset*f - v0) + v0)*decay
-
-		self.p = p1
-		self.v = v1
-
-		return p1
-	end
-
-	function Spring:Reset(pos)
-		self.p = pos
-		self.v = pos*0
-	end
+-- ════════════════════════════════════════════════════════════════
+--  PLAYER SIDEBAR
+-- ════════════════════════════════════════════════════════════════
+if RStorage:FindFirstChild("ActiveChallenges") then
+    if not RStorage["ActiveChallenges"]:FindFirstChild("noSanity") then
+        local PS = CreateInfo("Player Status")
+        local PSSanity = PS.AddInfo("Sanity")
+        Utility:Thread("Player", function()
+            while task.wait() do
+                PSSanity.Text = "Sanity: "..math.floor(LocalPlayer.Sanity.Value*100)/100
+            end
+        end):Start()
+    end
 end
 
-local cameraPos = Vector3.new()
-local cameraRot = Vector2.new()
-local cameraFov = 0
+-- ════════════════════════════════════════════════════════════════
+--  ESP THREAD
+-- ════════════════════════════════════════════════════════════════
+Utility:Thread("ESP", function()
+    while task.wait() do
+        local on = Config["ESP"]
+        local list = Config["ESPList"]
 
-local velSpring = Spring.new(Freecam.VEL_STIFFNESS, Vector3.new())
-local panSpring = Spring.new(Freecam.PAN_STIFFNESS, Vector2.new())
-local fovSpring = Spring.new(Freecam.FOV_STIFFNESS, 0)
+        local function chk(key) return on and table.find(list, key) end
 
-local Input = {} do
-	local thumbstickCurve do
-		local K_CURVATURE = 2.0
-		local K_DEADZONE = 0.15
+        if BooBooESP["Text"]      then if chk("BooBoo Doll") then BooBooESP["Text"]:Enable()      else BooBooESP["Text"]:Disable()      end end
+        if BooBooESP["Highlight"] then if chk("BooBoo Doll") then BooBooESP["Highlight"]:Enable()  else BooBooESP["Highlight"]:Disable()  end end
+        if GeneratorESP["Text"]      then if chk("Generator") then GeneratorESP["Text"]:Enable()      else GeneratorESP["Text"]:Disable()      end end
+        if GeneratorESP["Highlight"] then if chk("Generator") then GeneratorESP["Highlight"]:Enable()  else GeneratorESP["Highlight"]:Disable()  end end
+        if GhostESP["Text"]      then if chk("Ghost") then GhostESP["Text"]:Enable()      else GhostESP["Text"]:Disable()      end end
+        if GhostESP["Highlight"] then if chk("Ghost") then GhostESP["Highlight"]:Enable()  else GhostESP["Highlight"]:Disable()  end end
+        if CursedObjESP then if chk("Cursed Object") then CursedObjESP:Enable() else CursedObjESP:Disable() end end
+        -- Ghost Room ESP
+        if GhostRoomESP then if chk("Ghost Room") then GhostRoomESP.Enable() else GhostRoomESP.Disable() end end
 
-		local function fCurve(x)
-			return (exp(K_CURVATURE*x) - 1)/(exp(K_CURVATURE) - 1)
-		end
+        for _,pESP in pairs(PlayerESP) do
+            if not pESP["Player"] then continue end
+            if chk("Players") then pESP["ESP"]:Enable() else pESP["ESP"]:Disable() end
+            if chk("Backpack") then
+                pESP["Backpack"]:Enable()
+                for Slot=1,5 do
+                    local sv = pESP["Player"]:FindFirstChild("Slot"..Slot)
+                    pESP["Backpack"]["Slots"][Slot].Text = (sv and sv.Value) and sv.Value.Name or ""
+                end
+            else pESP["Backpack"]:Disable() end
+        end
+        for _,iESP in pairs(ItemsESP) do
+            if not on then iESP["ESP"]:Disable(); continue end
+            if iESP["Item"].Parent~=game.Workspace["Map"]["Items"] then iESP["ESP"]:Disable(); continue end
+            iESP["ESP"]:Enable()
+        end
+    end
+end):Start()
 
-		local function fDeadzone(x)
-			return fCurve((x - K_DEADZONE)/(1 - K_DEADZONE))
-		end
+-- ════════════════════════════════════════════════════════════════
+--  UPDATER THREAD
+-- ════════════════════════════════════════════════════════════════
+Utility:Thread("Updater", function()
+    while task.wait() do
+        if Config["CustomSprint"] and Sprinting then
+            pcall(function() LocalPlayer.Character:FindFirstChild("Humanoid").WalkSpeed = tonumber(SprintSpeedBox.Text) or 13 end)
+        end
+        if PlayerGui:FindFirstChild("Statusifier") then
+            PlayerGui["Statusifier"]["Container"]["UIScale"].Scale = tonumber(SideScaleBox.Text) or 1
+        end
+    end
+end):Start()
 
-		function thumbstickCurve(x)
-			return sign(x)*clamp(fDeadzone(abs(x)), 0, 1)
-		end
-	end
-
-	local gamepad = {
-		ButtonX = 0, ButtonY = 0, DPadDown = 0, DPadUp = 0,
-		ButtonL2 = 0, ButtonR2 = 0,
-		Thumbstick1 = Vector2.new(), Thumbstick2 = Vector2.new(),
-	}
-	local keyboard = { W=0, A=0, S=0, D=0, E=0, Q=0, Up=0, Down=0, LeftShift=0, RightShift=0, }
-	local mouse = { Delta = Vector2.new(), MouseWheel = 0, }
-
-	local NAV_GAMEPAD_SPEED  = Vector3.new(1, 1, 1)
-	local NAV_KEYBOARD_SPEED = Vector3.new(1, 1, 1)
-	local PAN_MOUSE_SPEED    = Vector2.new(1, 1)*(pi/64)
-	local PAN_GAMEPAD_SPEED  = Vector2.new(1, 1)*(pi/8)
-	local FOV_WHEEL_SPEED    = 1.0
-	local FOV_GAMEPAD_SPEED  = 0.25
-	local NAV_ADJ_SPEED      = 0.75
-	local NAV_SHIFT_MUL      = 0.25
-	local navSpeed = 1
-
-	function Input.Vel(dt)
-		navSpeed = clamp(navSpeed + dt*(keyboard.Up - keyboard.Down)*NAV_ADJ_SPEED, 0.01, 4)
-		local kGamepad = Vector3.new(thumbstickCurve(gamepad.Thumbstick1.X), thumbstickCurve(gamepad.ButtonR2) - thumbstickCurve(gamepad.ButtonL2), thumbstickCurve(-gamepad.Thumbstick1.Y))*NAV_GAMEPAD_SPEED
-		local kKeyboard = Vector3.new(keyboard.D - keyboard.A, keyboard.E - keyboard.Q, keyboard.S - keyboard.W)*NAV_KEYBOARD_SPEED
-		local shift = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
-		return (kGamepad + kKeyboard)*(navSpeed*(shift and NAV_SHIFT_MUL or 1))
-	end
-
-	function Input.Pan(dt)
-		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled and not UserInputService.GamepadEnabled and not GuiService:IsTenFootInterface() then
-			local x = -UserInputService:GetMouseDelta().X
-			local y = -UserInputService:GetMouseDelta().Y
-			mouse.Delta = Vector2.new(y, x)
-		end
-		local kGamepad = Vector2.new(thumbstickCurve(gamepad.Thumbstick2.Y), thumbstickCurve(-gamepad.Thumbstick2.X))*PAN_GAMEPAD_SPEED
-		local kMouse = mouse.Delta*PAN_MOUSE_SPEED
-		mouse.Delta = Vector2.new()
-		return kGamepad + kMouse
-	end
-
-	function Input.Fov(dt)
-		local kGamepad = (gamepad.ButtonX - gamepad.ButtonY)*FOV_GAMEPAD_SPEED
-		local kMouse = mouse.MouseWheel*FOV_WHEEL_SPEED
-		mouse.MouseWheel = 0
-		return kGamepad + kMouse
-	end
-
-	do
-		local function Keypress(action, state, input) keyboard[input.KeyCode.Name] = state == Enum.UserInputState.Begin and 1 or 0; return Enum.ContextActionResult.Sink end
-		local function GpButton(action, state, input) gamepad[input.KeyCode.Name] = state == Enum.UserInputState.Begin and 1 or 0; return Enum.ContextActionResult.Sink end
-		local function MousePan(action, state, input) local delta = input.Delta; mouse.Delta = Vector2.new(-delta.y, -delta.x); return Enum.ContextActionResult.Sink end
-		local function Thumb(action, state, input) gamepad[input.KeyCode.Name] = input.Position; return Enum.ContextActionResult.Sink end
-		local function Trigger(action, state, input) gamepad[input.KeyCode.Name] = input.Position.z; return Enum.ContextActionResult.Sink end
-		local function MouseWheel(action, state, input) mouse[input.UserInputType.Name] = -input.Position.z; return Enum.ContextActionResult.Sink end
-		local function Zero(t) for k, v in pairs(t) do t[k] = v*0 end end
-
-		function Input.StartCapture()
-			ContextActionService:BindActionAtPriority("FreecamKeyboard", Keypress, false, Freecam.INPUT_PRIORITY, Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D, Enum.KeyCode.E, Enum.KeyCode.Q, Enum.KeyCode.Up, Enum.KeyCode.Down)
-			ContextActionService:BindActionAtPriority("FreecamMousePan",          MousePan,   false, Freecam.INPUT_PRIORITY, Enum.UserInputType.MouseMovement)
-			ContextActionService:BindActionAtPriority("FreecamMouseWheel",        MouseWheel, false, Freecam.INPUT_PRIORITY, Enum.UserInputType.MouseWheel)
-			ContextActionService:BindActionAtPriority("FreecamGamepadButton",     GpButton,   false, Freecam.INPUT_PRIORITY, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY)
-			ContextActionService:BindActionAtPriority("FreecamGamepadTrigger",    Trigger,    false, Freecam.INPUT_PRIORITY, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonL2)
-			ContextActionService:BindActionAtPriority("FreecamGamepadThumbstick", Thumb,      false, Freecam.INPUT_PRIORITY, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2)
-		end
-		function Input.StopCapture()
-			navSpeed = 1
-			Zero(gamepad); Zero(keyboard); Zero(mouse)
-			ContextActionService:UnbindAction("FreecamKeyboard")
-			ContextActionService:UnbindAction("FreecamMousePan")
-			ContextActionService:UnbindAction("FreecamMouseWheel")
-			ContextActionService:UnbindAction("FreecamGamepadButton")
-			ContextActionService:UnbindAction("FreecamGamepadTrigger")
-			ContextActionService:UnbindAction("FreecamGamepadThumbstick")
-		end
-
-		GUI.Forward.TextButton.MouseButton1Down:Connect(function() keyboard["W"] = 1; end)
-		GUI.Forward.TextButton.MouseLeave:Connect(function() keyboard["W"] = 0; end)
-		GUI.Backward.TextButton.MouseButton1Down:Connect(function() keyboard["S"] = 1; end)
-		GUI.Backward.TextButton.MouseLeave:Connect(function() keyboard["S"] = 0; end)
-		GUI.Left.TextButton.MouseButton1Down:Connect(function() keyboard["A"] = 1; end)
-		GUI.Left.TextButton.MouseLeave:Connect(function() keyboard["A"] = 0; end)
-		GUI.Right.TextButton.MouseButton1Down:Connect(function() keyboard["D"] = 1; end)
-		GUI.Right.TextButton.MouseLeave:Connect(function() keyboard["D"] = 0; end)
-	end
-end
-
-local function GetFocusDistance(cameraFrame)
-	local znear = 0.1
-	local viewport = Camera.ViewportSize
-	local projy = 2*tan(cameraFov/2)
-	local projx = viewport.x/viewport.y*projy
-	local fx = cameraFrame.rightVector
-	local fy = cameraFrame.upVector
-	local fz = cameraFrame.lookVector
-	local minVect = Vector3.new()
-	local minDist = 512
-	for x = 0, 1, 0.5 do
-		for y = 0, 1, 0.5 do
-			local cx = (x - 0.5)*projx
-			local cy = (y - 0.5)*projy
-			local offset = fx*cx - fy*cy + fz
-			local origin = cameraFrame.p + offset*znear
-			local _, hit = Workspace:FindPartOnRay(Ray.new(origin, offset.unit*minDist))
-			local dist = (hit - origin).magnitude
-			if minDist > dist then minDist = dist; minVect = offset.unit end
-		end
-	end
-	return fz:Dot(minVect)*minDist
-end
-
-local function StepFreecam(dt)
-	local vel = velSpring:Update(dt, Input.Vel(dt))
-	local pan = panSpring:Update(dt, Input.Pan(dt))
-	local fov = fovSpring:Update(dt, Input.Fov(dt))
-	local zoomFactor = sqrt(tan(rad(70/2))/tan(rad(cameraFov/2)))
-	cameraFov = clamp(cameraFov + fov*Freecam.FOV_GAIN*(dt/zoomFactor), 1, 120)
-	cameraRot = cameraRot + pan*Freecam.PAN_GAIN*(dt/zoomFactor)
-	cameraRot = Vector2.new(clamp(cameraRot.x, -Freecam.PITCH_LIMIT, Freecam.PITCH_LIMIT), cameraRot.y%(2*pi))
-	local cameraCFrame = CFrame.new(cameraPos)*CFrame.fromOrientation(cameraRot.x, cameraRot.y, 0)*CFrame.new(vel*Freecam.NAV_GAIN*dt)
-	cameraPos = cameraCFrame.p
-	Camera.CFrame = cameraCFrame
-	Camera.Focus = cameraCFrame*CFrame.new(0, 0, -GetFocusDistance(cameraCFrame))
-	Camera.FieldOfView = cameraFov
-end
-
-local PlayerState = {} do
-	local mouseBehavior, mouseIconEnabled, cameraType, cameraFocus, cameraCFrame, cameraFieldOfView
-	local screenGuis = {}
-	local coreGuis = { Backpack=true, Chat=true, Health=true, PlayerList=true }
-	local setCores = { BadgesNotificationsActive=true, PointsNotificationsActive=true }
-
-	function PlayerState.Push()
-		for name in pairs(coreGuis) do coreGuis[name] = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType[name]); StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType[name], false) end
-		for name in pairs(setCores) do setCores[name] = StarterGui:GetCore(name); StarterGui:SetCore(name, false) end
-		local playergui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
-		if playergui then
-			for _, gui in pairs(playergui:GetChildren()) do
-				if gui:IsA("ScreenGui") and gui.Enabled then
-					if table.find(Freecam.IgnoreGUI, gui.Name) then continue end
-					screenGuis[#screenGuis + 1] = gui; gui.Enabled = false
-				end
-			end
-		end
-		cameraFieldOfView = Camera.FieldOfView; Camera.FieldOfView = 70
-		cameraType = Camera.CameraType; Camera.CameraType = Enum.CameraType.Custom
-		cameraCFrame = Camera.CFrame; cameraFocus = Camera.Focus
-		mouseIconEnabled = UserInputService.MouseIconEnabled; UserInputService.MouseIconEnabled = false
-		mouseBehavior = UserInputService.MouseBehavior; UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-	end
-
-	function PlayerState.Pop()
-		for name, isEnabled in pairs(coreGuis) do StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType[name], isEnabled) end
-		for name, isEnabled in pairs(setCores) do StarterGui:SetCore(name, isEnabled) end
-		for _, gui in pairs(screenGuis) do if gui.Parent then gui.Enabled = true end end
-		Camera.FieldOfView = cameraFieldOfView; cameraFieldOfView = nil
-		Camera.CameraType = cameraType; cameraType = nil
-		Camera.CFrame = cameraCFrame; cameraCFrame = nil
-		Camera.Focus = cameraFocus; cameraFocus = nil
-		UserInputService.MouseIconEnabled = mouseIconEnabled; mouseIconEnabled = nil
-		UserInputService.MouseBehavior = mouseBehavior; mouseBehavior = nil
-	end
-end
-
-do
-	function Freecam.StartFreecam()
-		local cameraCFrame = Camera.CFrame
-		cameraRot = Vector2.new(cameraCFrame:toEulerAnglesYXZ())
-		cameraPos = cameraCFrame.p
-		cameraFov = Camera.FieldOfView
-		velSpring:Reset(Vector3.new()); panSpring:Reset(Vector2.new()); fovSpring:Reset(0)
-		PlayerState.Push()
-		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled and not UserInputService.GamepadEnabled and not GuiService:IsTenFootInterface() then GUI:Show(); end
-		RunService:BindToRenderStep("Freecam", Enum.RenderPriority.Camera.Value, StepFreecam)
-		Input.StartCapture()
-	end
-	function Freecam.StopFreecam()
-		Input.StopCapture()
-		RunService:UnbindFromRenderStep("Freecam")
-		PlayerState.Pop()
-		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled and not UserInputService.GamepadEnabled and not GuiService:IsTenFootInterface() then GUI:Hide(); end
-	end
-	function Freecam.ToggleFreecam()
-		if Freecam.Enabled then Freecam.StopFreecam() else Freecam.StartFreecam() end
-		Freecam.Enabled = not Freecam.Enabled
-	end
-end
-return Freecam
-end)()
-	FreecamModule.IgnoreGUI = {"Radio", "Journal", "MobileUI", "Statusifier"}
-
-	local Sprinting = false
-
-	local Doors = {}
-	local function PopulateDoors(Model)
-		for _, v in pairs(Model:GetChildren()) do
-			if not table.find({"Part", "MeshPart", "Model"}, v.ClassName) then continue; end
-			if #v:GetChildren() > 0 then PopulateDoors(v); end
-			if (v.ClassName == "Part" or v.ClassName == "MeshPart") and v.CanCollide then table.insert(Doors, v); end
-		end
-	end
-	PopulateDoors(game.Workspace["Map"]["Doors"]);
-
-	local SavedLighting = {}
-	for _, value in pairs({"Ambient", "OutdoorAmbient", "Brightness"}) do SavedLighting[value] = Lighting[value]; end
-	local AtmosphereDensity = Lighting["Atmosphere"].Density
-
-	local LowestTemp = nil;
-	local CryingCount = 0;
-	local DoorCount = 0;
-	local ManifestCount = 0;
-	local blinkConnection;
-
-	local BooBooESP = {};
-	local GeneratorESP = {};
-	local GhostESP = {};
-	local PlayerESP = {};
-	local CursedObjectESP = nil;
-	local ItemsESP = {};
-
-	task.spawn(function()
-		repeat task.wait() until game.Workspace:FindFirstChild("BooBooDoll")
-		BooBooESP["Text"] = CreateESP("Text", { Text = "[BooBoo]"; Distance = game.Workspace["BooBooDoll"]; Parent = game.Workspace["BooBooDoll"]; Color = Color3.fromRGB(0, 255, 255); });
-		BooBooESP["Highlight"] = CreateESP("Highlight", { Parent = game.Workspace["BooBooDoll"]; Color = Color3.fromRGB(0, 255, 255); });
-
-		repeat task.wait() until #game.Workspace["Map"]["Generators"]:GetChildren() > 0
-		if (game.Workspace["Map"]["Generators"]:GetChildren()[1]):WaitForChild("Highlight", 1) then (game.Workspace["Map"]["Generators"]:GetChildren()[1])["Highlight"]:Destroy(); end
-		local Generator = game.Workspace["Map"]["Generators"]:GetChildren()[1];
-		GeneratorESP["Text"] = CreateESP("Text", { Text = "[Generator]"; Distance = Generator; Parent = Generator; Color = Color3.fromRGB(255, 16, 240); });
-		GeneratorESP["Highlight"] = CreateESP("Highlight", { Parent = Generator; Color = Color3.fromRGB(255, 16, 240); });
-	end)
-	if game.Workspace:FindFirstChild("Ghost") then
-		if game.Workspace["Ghost"]:WaitForChild("Highlight", 1) then game.Workspace["Ghost"]["Highlight"]:Destroy(); end
-		local Ghost = game.Workspace["Ghost"];
-		GhostESP["Text"] = CreateESP("Text", { Text = "[Ghost]"; Distance = Ghost.PrimaryPart; ParentText = Ghost:WaitForChild("Head"); Color = Color3.fromRGB(255, 0, 0); });
-		GhostESP["Highlight"] = CreateESP("Highlight", { Parent = Ghost; Color = Color3.fromRGB(255, 0, 0); });
-	end
-	for _, player in pairs(Players:GetChildren()) do
-		if player == LocalPlayer then continue; end
-		repeat task.wait() until player.Character;
-		PlayerESP[player.Name] = {};
-		PlayerESP[player.Name]["Player"] = player;
-		PlayerESP[player.Name]["ESP"] = CreateESP("Text & Highlight", { Text = player.DisplayName; ParentText = player.Character:FindFirstChild("Head"); ParentHighlight = player.Character; Color = Color3.fromRGB(255, 255, 255); FillTransparency = 1; });
-		PlayerESP[player.Name]["Backpack"] = CreateESP("Backpack", { Parent = player.Character; });
-	end
-	function ValidateItemESP(item)
-		if item.Name == "Tarot Cards" then return false; end
-		if item.Name == "Music Box" then return false; end
-		if not table.find(Utility:GetTableKeys(BlairData["Items"]), item.Name) then return false; end
-		if item.Name == "Incense Burner" then
-			if item:WaitForChild("Used").Value then return false; end
-			if item:WaitForChild("GhostIncensed").Value then return false; end
-		end
-		if item.Name == "Photo Camera" then
-			if item:FindFirstChild("PhotoCameraMemory") then
-				if item["PhotoCameraMemory"]:WaitForChild("Memory").Value == 100 then return false; end
-				if item["PhotoCameraMemory"]:WaitForChild("MemoryCapacity").Text == "100/100 MB" then return false; end
-			end
-		end
-		return true;
-	end
-	task.spawn(function()
-		task.wait(5);
-		for _, item in pairs(game.Workspace["Map"]["Items"]:GetChildren()) do
-			if not ValidateItemESP(item) then continue; end
-			if not table.find(Config["ESPList"], item.Name) then continue; end
-			local Item = { ["Item"] = item; };
-			Item["ESP"] = CreateESP("Highlight", { Parent = item; Color = Color3.fromRGB(0, 255, 0); });
-			table.insert(ItemsESP, Item)
-		end
-	end)
-
-	--------------------------
-	-- [[ USER INTERFACE ]] --
-	--------------------------
-
-	-- Custom Sprint (with speed input)
-	local CustomSprint = CreateSettings("Sprint", { Config = "CustomSprint"; });
-	local CustomSprintSpeed = CustomSprint:AddTextbox({ Text = "13"; }, { Config = "CustomSprintSpeed"; Display = "Speed"; Type = "Number"; });
-
-	-- Fullbright (simple toggle, no ambient field)
-	local Fullbright = CreateSettings("Fullbright", { Config = "Fullbright"; Keybind = Enum.KeyCode.T; }, {
-		On = function()
-			Lighting.Ambient = Color3.fromRGB(138, 138, 138);
-			Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128);
-			Lighting.Brightness = 2;
-			Lighting["Atmosphere"].Density = 0;
-		end;
-		Off = function()
-			for index, value in pairs(SavedLighting) do Lighting[index] = value; end;
-			Lighting["Atmosphere"].Density = AtmosphereDensity;
-		end;
-	});
-
-	-- No Clip Door
-	local NoClipDoor = CreateSettings("No Clip", { Config = "NoClipDoor"; Keybind = Enum.KeyCode.X; }, {
-		On = function()
-			for _, v in pairs(Doors) do v.CanCollide = false end
-			game.Workspace["Map"]["Van"]["Van"]["Door"]["Lines"]["Part"].CanCollide = false;
-			game.Workspace["Map"]["Van"]["Van"]["Door"]["Main"].CanCollide = false;
-		end;
-		Off = function()
-			for _, v in pairs(Doors) do v.CanCollide = true end
-			game.Workspace["Map"]["Van"]["Van"]["Door"]["Lines"]["Part"].CanCollide = true;
-			game.Workspace["Map"]["Van"]["Van"]["Door"]["Main"].CanCollide = true;
-		end;
-	});
-
-	-- ESP toggle + ESP panel (replaces dropdown)
-	local List = Utility:CombineTable({"Ghost","BooBoo Doll","Generator","Players","Cursed Object","Backpack"}, Utility:GetTableKeys(BlairData["Items"]));
-	local ESP = CreateSettings("ESP", { Config = "ESP"; });
-	local ESPPanel = ESP:AddESPPanel({
-		Config = "ESPList";
-		List = List;
-		Callback = function()
-			for _, iESP in pairs(ItemsESP) do iESP["ESP"]:Destroy(); end ItemsESP = {};
-			for _, item in pairs(game.Workspace["Map"]["Items"]:GetChildren()) do
-				if not ValidateItemESP(item) then continue; end
-				if not table.find(Config["ESPList"], item.Name) then continue; end
-				local Item = { ["Item"] = item; };
-				Item["ESP"] = CreateESP("Highlight", { Parent = item; Color = Color3.fromRGB(0, 255, 0); });
-				table.insert(ItemsESP, Item)
-			end
-		end;
-	});
-
-	-- Side Status (with scale input)
-	local SideStatus = CreateSettings("Status", { Config = "SideStatus"; }, {
-		On = function() PlayerGui["Statusifier"].Enabled = true; end;
-		Off = function() PlayerGui["Statusifier"].Enabled = false; end;
-	});
-	local SideStatusScale = SideStatus:AddTextbox({ Text = "1"; }, { Config = "SideStatusScale"; Display = "Scale"; Type = "Number"; });
-
-	---------------------------
-	-- [[[ CURSED OBJECT ]]] --
-	---------------------------
-	local Objects = CreateInfo("Cursed Object");
-	task.spawn(function()
-		pcall(function()
-			local function AddCursedESP(Display, Parent)
-				CursedObjectESP = CreateESP("Text", { Text = Display; Parent = Parent; Color = Color3.fromRGB(215, 252, 0); });
-				if Config["ESP"] and table.find(Config["ESPList"], "Cursed Object") then CursedObjectESP:Enable(); else CursedObjectESP:Disable(); end
-			end
-			local function FindCursedInPlayers(Name)
-				for _, Player in pairs(Players:GetChildren()) do
-					if Player.Backpack:FindFirstChild(Name) then return Player.Backpack:FindFirstChild(Name); end
-					if Player.Character and Player.Character:FindFirstChild(Name) then return Player.Character:FindFirstChild(Name); end
-				end
-				return nil;
-			end
-			local function TryFind(Name, Parent, WaitTime)
-				local found = Parent:WaitForChild(Name, WaitTime or 10);
-				if found then return found; end
-				return FindCursedInPlayers(Name);
-			end
-
-			local SummoningCircle = game.Workspace:WaitForChild("SummoningCircle", 10);
-			if SummoningCircle then Objects.AddInfo("Summoning Circle"); AddCursedESP("[Summoning Circle]", SummoningCircle); end
-
-			local SpiritBoard = game.Workspace:WaitForChild("Spirit Board", 10);
-			if SpiritBoard then Objects.AddInfo("Spirit Board"); AddCursedESP("[Spirit Board]", SpiritBoard); end
-
-			local TarotCards = TryFind("Tarot Cards", game.Workspace["Map"]["Items"], 10) or FindCursedInPlayers("Tarot Cards");
-			if TarotCards then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", TarotCards); end
-
-			local MusicBox = TryFind("Music Box", game.Workspace["Map"]["Items"], 10) or FindCursedInPlayers("Music Box");
-			if MusicBox then Objects.AddInfo("Music Box"); AddCursedESP("[Music Box]", MusicBox); end
-
-			game.Workspace.ChildAdded:Connect(function(child)
-				if child.Name == "SummoningCircle" then Objects.AddInfo("Summoning Circle"); AddCursedESP("[Summoning Circle]", child); end
-				if child.Name == "Spirit Board" then Objects.AddInfo("Spirit Board"); AddCursedESP("[Spirit Board]", child); end
-			end)
-			game.Workspace["Map"]["Items"].ChildAdded:Connect(function(child)
-				if child.Name == "Tarot Cards" then Objects.AddInfo("Tarot Cards"); AddCursedESP("[Tarot Cards]", child); end
-				if child.Name == "Music Box" then Objects.AddInfo("Music Box"); AddCursedESP("[Music Box]", child); end
-			end)
-			for _, Player in pairs(Players:GetChildren()) do
-				Player.CharacterAdded:Connect(function(char)
-					char.ChildAdded:Connect(function(child)
-						if child.Name == "Tarot Cards" then AddCursedESP("[Tarot Cards]", child); end
-						if child.Name == "Music Box" then AddCursedESP("[Music Box]", child); end
-					end)
-				end)
-				Player.Backpack.ChildAdded:Connect(function(child)
-					if child.Name == "Tarot Cards" then AddCursedESP("[Tarot Cards]", child); end
-					if child.Name == "Music Box" then AddCursedESP("[Music Box]", child); end
-				end)
-			end
-		end)
-	end)
-
-	------------------
-	-- [[[ ROOM ]]] --
-	------------------
-	local Room = CreateInfo("Possible Room");
-	local RoomName = Room.AddInfo("Room Name");
-	local RoomTemp = Room.AddInfo("Room Temp");
-	local RoomWater = Room.AddInfo("Water Running");
-	local RoomSalt = Room.AddInfo("Salt Stepped"); RoomSalt.Visible = false;
-	local RoomCrying = Room.AddInfo("Ghost Crying"); RoomCrying.Visible = false;
-	local RoomDoor = Room.AddInfo("Door Interact"); RoomDoor.Visible = false;
-	local RoomManifest = Room.AddInfo("Manifest"); RoomManifest.Visible = false;
-	local RoomThread = Utility:Thread("Room", function()
-		local RoomESP = nil;
-		local CurrentHighlightedRoom = nil;
-		while task.wait() do
-			local LowestTempRoom = nil;
-			for _, v in pairs(game.Workspace["Map"]["Zones"]:GetChildren()) do
-				if v.ClassName ~= "Part" and v.ClassName ~= "UnionOperation" then continue; end
-				if v:FindFirstChild("Exclude") then continue; end
-				if not v:FindFirstChild("_____Temperature") then continue; end
-				if not v["_____Temperature"]:FindFirstChild("_____LocalBaseTemp") then continue; end
-				if LowestTempRoom == nil then LowestTempRoom = v; continue; end
-				if v["_____Temperature"]["_____LocalBaseTemp"].Value > LowestTempRoom["_____Temperature"]["_____LocalBaseTemp"].Value then continue; end
-				LowestTempRoom = v;
-			end
-			if LowestTempRoom and LowestTempRoom["_____Temperature"] then
-				local tempRaw = LowestTempRoom["_____Temperature"].Value;
-				local tempInt = math.floor(tempRaw * 100);
-				local tempWhole = math.floor(tempInt / 100);
-				local tempDec = math.abs(tempInt) % 100;
-				local tempStr = tostring(tempWhole) .. "." .. (tempDec < 10 and "0" .. tostring(tempDec) or tostring(tempDec));
-				RoomName.Text = "Room: " .. LowestTempRoom.Name;
-				RoomTemp.Text = "Temp: " .. tempStr .. "°C";
-				LowestTemp = LowestTempRoom;
-
-				if CurrentHighlightedRoom ~= LowestTempRoom then
-					if RoomESP then RoomESP.Destroy(); end
-					pcall(function()
-						if LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0") then LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0"):Destroy(); end
-						if game.Workspace:FindFirstChild("RoomESP_Att1") then game.Workspace:FindFirstChild("RoomESP_Att1"):Destroy(); end
-						if game.Workspace:FindFirstChild("RoomESP_Beam") then game.Workspace:FindFirstChild("RoomESP_Beam"):Destroy(); end
-					end)
-					RoomESP = CreateESP("Text", {
-						Text = "[Ghost Room] " .. LowestTempRoom.Name;
-						Parent = LowestTempRoom;
-						Distance = LowestTempRoom;
-						Color = Color3.fromRGB(255, 140, 0);
-						Size = UDim2.new(8, 0, 2, 0);
-						StudsOffset = Vector3.new(0, 5, 0);
-					});
-					RoomESP.Enable();
-					pcall(function()
-						local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart");
-						if not hrp then return; end
-						for _, v in pairs(game.Workspace.Terrain:GetChildren()) do
-							if v.Name == "RoomESP_Att1" or v.Name == "RoomESP_Beam" then v:Destroy(); end
-						end
-						if hrp:FindFirstChild("RoomESP_Att0") then hrp:FindFirstChild("RoomESP_Att0"):Destroy(); end
-						local att0 = Instance.new("Attachment"); att0.Name = "RoomESP_Att0"; att0.Parent = hrp;
-						local att1 = Instance.new("Attachment"); att1.Name = "RoomESP_Att1"; att1.WorldPosition = LowestTempRoom.Position; att1.Parent = game.Workspace.Terrain;
-						local beam = Instance.new("Beam");
-						beam.Name = "RoomESP_Beam"; beam.Attachment0 = att0; beam.Attachment1 = att1;
-						beam.Color = ColorSequence.new(Color3.fromRGB(255, 140, 0));
-						beam.Width0 = 0.1; beam.Width1 = 0.1; beam.FaceCamera = true;
-						beam.LightEmission = 1; beam.Transparency = NumberSequence.new(0.2);
-						beam.Parent = game.Workspace.Terrain;
-					end)
-					CurrentHighlightedRoom = LowestTempRoom;
-				else
-					if RoomESP and RoomESP.ESP then
-						pcall(function() RoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name; end)
-					end
-				end
-			end
-			local FoundWater = false;
-			for _, waters in pairs(game.Workspace["Map"]["Water"]:GetChildren()) do
-				if #waters:GetChildren() > 0 and waters:FindFirstChild("WaterRunning") then FoundWater = true; break; end
-			end
-			if FoundWater then RoomWater.Visible = true; else RoomWater.Visible = false; end
-			if not RoomSalt.Visible then
-				for _, salt in pairs(game.Workspace["Map"]["Misc"]:GetChildren()) do
-					if salt.Name == "SaltStepped" then RoomSalt.Visible = true; end
-				end
-			end
-			if CryingCount > 0 then RoomCrying.Visible = true; RoomCrying.Text = "Ghost Crying: "..tostring(CryingCount); end
-			if DoorCount > 0 then RoomDoor.Visible = true; RoomDoor.Text = "Door Interact: "..tostring(DoorCount); end
-			if ManifestCount > 0 then RoomManifest.Visible = true; RoomManifest.Text = "Manifest: "..tostring(ManifestCount); end
-		end
-	end):Start()
-
-	-------------------
-	-- [[[ GHOST ]]] --
-	-------------------
-	local Ghost = CreateInfo("Ghost Status");
-	local GhostActivity = Ghost.AddInfo("Activity");
-	local GhostLocation = Ghost.AddInfo("Location");
-	local GhostSpeed = Ghost.AddInfo("WalkSpeed");
-	local GhostBlink = Ghost.AddInfo("Blink");
-	local GhostDuration = Ghost.AddInfo("Duration");
-	local GhostDisruption = Ghost.AddInfo("Disrupting");
-	local GhostBanshee = Ghost.AddInfo("Banshee Scream"); GhostBanshee.Visible = false;
-	local GhostFaejkur = Ghost.AddInfo("Faejkur Laugh"); GhostFaejkur.Visible = false;
-	local GhostYama = Ghost.AddInfo("Yama Roar"); GhostYama.Visible = false;
-	function FindParabolic(Object)
-		for _, parabolic in pairs(Object:GetChildren()) do
-			if parabolic.Name ~= "Parabolic Microphone" then continue; end
-			if parabolic:FindFirstChild("Handle") then
-				if parabolic.Handle:FindFirstChild("BansheeScream") and parabolic.Handle:FindFirstChild("BansheeScream").Playing then GhostBanshee.Visible = true; end
-				if parabolic.Handle:FindFirstChild("FaeLaugh") and parabolic.Handle:FindFirstChild("FaeLaugh").Playing then GhostFaejkur.Visible = true; end
-			end
-		end
-	end
-	local GhostThread = Utility:Thread("Ghost", function()
-		while task.wait() do
-			GhostActivity.Text = "Activity: ".. RStorage["Activity"].Value;
-			if RStorage["Disruption"].Value then GhostDisruption.Visible = true; else GhostDisruption.Visible = false; end
-			if game.Workspace:FindFirstChild("Ghost") then
-				if game.Workspace["Ghost"]:FindFirstChild("Hunting") then
-					if game.Workspace["Ghost"]["Hunting"].Value then for _, v in pairs({GhostLocation, GhostSpeed, GhostBlink, GhostDuration}) do v.Visible = true; end
-					else for _, v in pairs({GhostLocation}) do v.Visible = true; end end
-				end
-				pcall(function()
-					if game.Workspace:WaitForChild("Ghost") then
-						GhostLocation.Text = game.Workspace:WaitForChild("Ghost", 5):WaitForChild("Zone", 5).Value.Name or "";
-						GhostSpeed.Text = "Walk Speed: ".. (math.floor(game.Workspace:WaitForChild("Ghost", 5).Humanoid.WalkSpeed * 1000) / 1000);
-						GhostDuration.Text = "Duration: ".. RStorage["HuntDuration"].Value;
-					end
-				end)
-			else for _, v in pairs({GhostLocation, GhostSpeed, GhostBlink, GhostDuration}) do v.Visible = false; end end
-			if not GhostBanshee.Visible or not GhostFaejkur.Visible then
-				for _, Player in pairs(Players:GetChildren()) do
-					if Player.Character then FindParabolic(Player.Character); end
-				end
-				FindParabolic(game.Workspace["Map"]["Items"]);
-			end
-		end
-	end):Start()
-	if game.Workspace:FindFirstChild("Ghost") then
-		local saveStamp = tick();
-		pcall(function()
-			blinkConnection = game.Workspace["Ghost"]:WaitForChild("Head"):GetPropertyChangedSignal("Transparency"):Connect(function()
-				GhostBlink.Text = "Blink: ".. (math.floor((tick() - saveStamp) * 1000) / 1000) .."s"
-				saveStamp = tick();
-			end);
-		end);
-	end
-	game.Workspace.ChildAdded:Connect(function(instance)
-		if instance.Name ~= "Ghost" then return; end
-		if game.Workspace["Ghost"]:WaitForChild("Highlight", 1) then game.Workspace["Ghost"]["Highlight"]:Destroy(); end
-		GhostESP["Text"] = CreateESP("Text", { Text = "[Ghost]"; Distance = instance.PrimaryPart; Parent = instance:WaitForChild("Head", 1); Color = Color3.fromRGB(255, 0, 0); });
-		GhostESP["Highlight"] = CreateESP("Highlight", { Parent = instance; Color = Color3.fromRGB(255, 0, 0); });
-		local saveStamp = tick();
-		pcall(function()
-			blinkConnection = instance:WaitForChild("Head", 1):GetPropertyChangedSignal("Transparency"):Connect(function()
-				GhostBlink.Text = "Blink: ".. (math.floor((tick() - saveStamp) * 1000) / 1000) .."s"
-				saveStamp = tick();
-			end);
-		end);
-		if game.Workspace["Ghost"]:WaitForChild("Hunting") then
-			if not game.Workspace["Ghost"]["Hunting"].Value then ManifestCount = ManifestCount + 1; end
-		end
-	end);
-	game.Workspace.ChildRemoved:Connect(function(instance)
-		if instance.Name ~= "Ghost" then return; end
-		pcall(function() blinkConnection:Disconnect(); end);
-	end);
-
-	----------------------
-	-- [[[ EVIDENCE ]]] --
-	----------------------
-	if RStorage:FindFirstChild("ActiveChallenges") then
-		if not (RStorage["ActiveChallenges"]:FindFirstChild("evidencelessOne") and RStorage["ActiveChallenges"]:FindFirstChild("evidencelessTwo")) then
-			local Evidence = CreateInfo("Evidences");
-			local Evidences = {}
-			for _, evi in pairs({"EMF Level 5","Ultraviolet","Freezing Temp.","Ghost Orbs","Ghost Writing","Spirit Box","SLS Anomaly"}) do
-				Evidences[evi] = Evidence.AddInfo(evi);
-				Evidences[evi].Visible = false;
-			end
-			
-			local function FindSpiritBox(Object)
-				for _, sb in pairs(Object:GetChildren()) do
-					if sb.Name ~= "Spirit Box" then continue; end
-					for _, talk in pairs(sb:FindFirstChild("GhostTalk"):GetChildren()) do
-						if not talk.Playing then continue; end
-						if talk.Name == "GhostTalk5" then GhostYama.Visible = true; end
-						Evidences["Spirit Box"].Visible = true;
-					end
-				end
-			end
-			local function FindEMFReader(Object)
-				for _, emf in pairs(Object:GetChildren()) do
-					if emf.Name ~= "EMF Reader" then continue; end
-					if not emf:FindFirstChild("5") then continue; end
-					if emf["5"].Material ~= Enum.Material.Neon then continue; end
-					Evidences["EMF Level 5"].Visible = true;
-				end
-			end
-			if RStorage["Remotes"]:FindFirstChild("TextChatServicer") then
-				RStorage["Remotes"]["TextChatServicer"].OnClientEvent:Connect(function() Evidences["Spirit Box"].Visible = true; end)
-			end
-			
-			local EvidenceThread = Utility:Thread("Evidence", function()
-				while task.wait() do
-					if not Evidences["EMF Level 5"].Visible then
-						if not game.Workspace:FindFirstChild("Ghost") then
-							for _, Player in pairs(Players:GetChildren()) do
-								if Player.Character then FindEMFReader(Player.Character); end
-							end
-							FindEMFReader(game.Workspace["Map"]["Items"]);
-						end
-					end
-					if not Evidences["Ultraviolet"].Visible and #game.Workspace["Map"]["Prints"]:GetChildren() > 0 then
-						for _, prints in pairs(game.Workspace["Map"]["Prints"]:GetChildren()) do
-							if table.find({"Script", "LocalScript"}, prints.ClassName) then continue; end
-							Evidences["Ultraviolet"].Visible = true;
-						end
-					end
-					if not Evidences["Freezing Temp."].Visible then
-						if LowestTemp["_____Temperature"].Value < 0.1 and LowestTemp["_____Temperature"]["_____LocalBaseTemp"].Value <= 0 then Evidences["Freezing Temp."].Visible = true; end
-					end
-					if not Evidences["Ghost Orbs"].Visible and #game.Workspace["Map"]["Orbs"]:GetChildren() > 0 then
-						for _, orbs in pairs(game.Workspace["Map"]["Orbs"]:GetChildren()) do
-							if table.find({"Script", "LocalScript"}, orbs.ClassName) then continue; end
-							Evidences["Ghost Orbs"].Visible = true;
-						end
-					end
-					if not Evidences["Ghost Writing"].Visible then
-						for _, item in pairs(game.Workspace["Map"]["Items"]:GetChildren()) do
-							if item.Name ~= "Ghost Writing Book" then continue; end
-							if item:FindFirstChild("Written").Value then Evidences["Ghost Writing"].Visible = true; break; end
-						end
-					end
-					if not Evidences["Spirit Box"].Visible then
-						for _, Player in pairs(Players:GetChildren()) do
-							if Player.Character then FindSpiritBox(Player.Character); end
-						end
-						FindSpiritBox(game.Workspace["Map"]["Items"]);
-					end
-					if not Evidences["SLS Anomaly"].Visible then
-						if not game.Workspace:FindFirstChild("Ghost") then
-							for _, instance in pairs(game.Workspace:GetChildren()) do
-								if instance.ClassName ~= "Model" then continue; end
-								if Players:FindFirstChild(instance.Name) then continue; end
-								if instance.Name == "Ghost" then continue; end
-								if not string.find(instance.Name, "SLS_") then continue; end
-								Evidences["SLS Anomaly"].Visible = true;
-							end
-						end
-					end
-				end
-			end):Start()
-		end
-	end
-
-	--------------------
-	-- [[[ PLAYER ]]] --
-	--------------------
-	if RStorage:FindFirstChild("ActiveChallenges") then
-		if not RStorage["ActiveChallenges"]:FindFirstChild("noSanity") then
-			local PlayerStats = CreateInfo("Player Status");
-			local PlayerSanity = PlayerStats.AddInfo("Sanity");
-			local PlayerThread = Utility:Thread("Player", function()
-				while task.wait() do
-					PlayerSanity.Text = "Sanity: ".. (math.floor(LocalPlayer.Sanity.Value * 100) / 100);
-				end
-			end):Start()
-		end
-	end
-
-	------------------
-	-- [[ EVENTS ]] --
-	------------------
-	local timeBetween = { ["UI"] = 0; ["Freecam"] = 0; }
-	local heldDown = { ["UI"] = false; ["Freecam"] = false; }
-	local UpdaterThread = Utility:Thread("Updater", function()
-		while task.wait() do
-			if CustomSprint.Enabled and Sprinting then LocalPlayer.Character:FindFirstChild("Humanoid").WalkSpeed = tonumber(CustomSprintSpeed.Text) or 13; end
-			if PlayerGui:FindFirstChild("Statusifier") then PlayerGui["Statusifier"]["Container"]["UIScale"].Scale = tonumber(SideStatusScale.Text) or 1; end
-		end
-	end):Start()
-
-	local ESPThread = Utility:Thread("ESP", function()
-		while task.wait() do
-			if Config["ESP"] and table.find(Config["ESPList"], "BooBoo Doll") then
-				if BooBooESP["Text"] then BooBooESP["Text"]:Enable(); end
-				if BooBooESP["Highlight"] then BooBooESP["Highlight"]:Enable(); end
-			else
-				if BooBooESP["Text"] then BooBooESP["Text"]:Disable(); end
-				if BooBooESP["Highlight"] then BooBooESP["Highlight"]:Disable(); end
-			end
-			if Config["ESP"] and table.find(Config["ESPList"], "Generator") then
-				if GeneratorESP["Text"] then GeneratorESP["Text"]:Enable(); end
-				if GeneratorESP["Highlight"] then GeneratorESP["Highlight"]:Enable(); end
-			else
-				if GeneratorESP["Text"] then GeneratorESP["Text"]:Disable(); end
-				if GeneratorESP["Highlight"] then GeneratorESP["Highlight"]:Disable(); end
-			end
-			if Config["ESP"] and table.find(Config["ESPList"], "Ghost") then
-				if GhostESP["Text"] then GhostESP["Text"]:Enable(); end
-				if GhostESP["Highlight"] then GhostESP["Highlight"]:Enable(); end
-			else
-				if GhostESP["Text"] then GhostESP["Text"]:Disable(); end
-				if GhostESP["Highlight"] then GhostESP["Highlight"]:Disable(); end
-			end
-			if CursedObjectESP then if Config["ESP"] and table.find(Config["ESPList"], "Cursed Object") then CursedObjectESP:Enable(); else CursedObjectESP:Disable(); end end
-			for _, pESP in pairs(PlayerESP) do
-				if pESP["Player"] == nil then continue; end
-				if Config["ESP"] and table.find(Config["ESPList"], "Players") then pESP["ESP"]:Enable(); else pESP["ESP"]:Disable(); end
-				if Config["ESP"] and table.find(Config["ESPList"], "Backpack") then
-					pESP["Backpack"]:Enable();
-					for Slot = 1, 5 do
-						if not pESP["Player"]:FindFirstChild("Slot"..tostring(Slot)) then pESP["Backpack"]["Slots"][Slot].Text = ""; continue; end
-						if pESP["Player"]["Slot"..tostring(Slot)].Value == nil then pESP["Backpack"]["Slots"][Slot].Text = ""; continue; end
-						pESP["Backpack"]["Slots"][Slot].Text = (pESP["Player"]["Slot"..tostring(Slot)].Value).Name;
-					end
-				else pESP["Backpack"]:Disable(); end
-			end
-			for _, iESP in pairs(ItemsESP) do
-				if not Config["ESP"] then iESP["ESP"]:Disable(); continue; end
-				if iESP["Item"].Parent ~= game.Workspace["Map"]["Items"] then iESP["ESP"]:Disable(); continue; end
-				iESP["ESP"]:Enable();
-			end
-		end
-	end):Start()
-
-	game.Workspace.ChildAdded:Connect(function(instance)
-		if Players:FindFirstChild(instance.Name) and PlayerESP[instance.Name] then
-			
-		end
-	end)
-
-	game.Workspace["Map"].DescendantAdded:Connect(function(instance)
-		if instance.ClassName ~= "Sound" then return; end
-		if instance.Name == "GhostCrying" then CryingCount = CryingCount + 1; end
-		if string.find(instance.Name, "DoorCreak") then DoorCount = DoorCount + 1; end
-	end)
-
-	game.Workspace["Map"]["Items"].ChildAdded:Connect(function(item)
-		if not ValidateItemESP(item) then return; end
-		if not table.find(Config["ESPList"], item.Name) then return; end
-		for _, iESP in pairs(ItemsESP) do
-			if iESP["Item"] and iESP["Item"] == item then
-				if not ValidateItemESP(iESP["Item"]) then
-					iESP["ESP"]:Destroy();
-					table.remove(ItemsESP, table.find(ItemsESP, iESP));
-				end
-				return;
-			end
-		end
-		local Item = { ["Item"] = item; };
-		Item["ESP"] = CreateESP("Highlight", { Parent = item; Color = Color3.fromRGB(0, 255, 0); });
-		table.insert(ItemsESP, Item)
-	end)
-
-	Players.PlayerAdded:Connect(function(player)
-		if PlayerESP[player.Name] then return; end
-		repeat task.wait() until player.Character;
-		PlayerESP[player.Name] = {};
-		PlayerESP[player.Name]["Player"] = player;
-		PlayerESP[player.Name]["ESP"] = CreateESP("Text & Highlight", { Text = player.DisplayName; ParentText = player.Character:FindFirstChild("Head"); ParentHighlight = player.Character; Color = Color3.fromRGB(255, 255, 255); FillTransparency = 1; });
-		PlayerESP[player.Name]["Backpack"] = CreateESP("Backpack", { Parent = player.Character; });
-	end)
-	Players.PlayerRemoving:Connect(function(player)
-		PlayerESP[player.Name] = nil;
-	end)
-
-	UserIS.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed then return end
-		if input.KeyCode == Enum.KeyCode.LeftShift then Sprinting = true; end
-		if input.KeyCode == Enum.KeyCode.M and FreecamModule.Enabled then FreecamModule.ToggleFreecam(); end
-		if input.KeyCode == Enum.KeyCode.J then
-			heldDown["UI"] = true
-			task.spawn(function()
-				repeat task.wait(1); timeBetween["UI"] += 1; until timeBetween["UI"] == 2 or heldDown["UI"] == false;
-				if timeBetween["UI"] ~= 2 then timeBetween["UI"] = 0; return; end
-				timeBetween["UI"] = 0;
-				PlayerGui["Journal"]["Background"]["Settings"].Visible = not PlayerGui["Journal"]["Background"]["Settings"].Visible;
-				PlayerGui["Statusifier"]["Container"].Visible = not PlayerGui["Statusifier"]["Container"].Visible;
-			end)
-		end
-		
-		if Sprinting then
-			if input.KeyCode == Enum.KeyCode.LeftBracket then local speed = tonumber(CustomSprintSpeed.Text); CustomSprintSpeed.Text = tostring(speed + 1); end
-			if input.KeyCode == Enum.KeyCode.RightBracket then local speed = tonumber(CustomSprintSpeed.Text); CustomSprintSpeed.Text = tostring(speed - 1); end
-		end
-	end)
-	UserIS.InputEnded:Connect(function(input)
-		if input.KeyCode == Enum.KeyCode.LeftShift then Sprinting = false; end
-		if input.KeyCode == Enum.KeyCode.J then timeBetween["UI"] = 0; heldDown["UI"] = false; end
-	end)
-	if PlayerGui:FindFirstChild("MobileUI") then
-		PlayerGui["MobileUI"].SprintButton.MouseButton1Down:Connect(function() Sprinting = true; end)
-		PlayerGui["MobileUI"].SprintButton.MouseButton1Up:Connect(function() Sprinting = false; end)
-		PlayerGui["MobileUI"].Frame.JournalButton.MouseButton1Down:Connect(function()
-			heldDown["UI"] = true
-			task.spawn(function()
-				repeat task.wait(1); timeBetween["UI"] += 1; until timeBetween["UI"] == 2 or heldDown["UI"] == false;
-				if timeBetween["UI"] ~= 2 then timeBetween["UI"] = 0; return; end
-				timeBetween["UI"] = 0;
-				PlayerGui["Journal"]["Background"]["Settings"].Visible = not PlayerGui["Journal"]["Background"]["Settings"].Visible;
-				PlayerGui["Statusifier"]["Container"].Visible = not PlayerGui["Statusifier"]["Container"].Visible;
-			end)
-		end)
-		PlayerGui["MobileUI"].Frame.JournalButton.MouseLeave:Connect(function() timeBetween["UI"] = 0; heldDown["UI"] = false; end)
-		PlayerGui["MobileUI"].FlashlightButton.MouseButton1Down:Connect(function()
-			if not FreecamModule.Enabled then return; end
-			heldDown["Freecam"] = true
-			task.spawn(function()
-				repeat task.wait(1); timeBetween["Freecam"] += 1; until timeBetween["Freecam"] == 2 or heldDown["Freecam"] == false;
-				if timeBetween["Freecam"] ~= 2 then timeBetween["Freecam"] = 0; return; end
-				timeBetween["Freecam"] = 0;
-				FreecamModule.ToggleFreecam()
-			end)
-		end)
-		PlayerGui["MobileUI"].FlashlightButton.MouseLeave:Connect(function() timeBetween["Freecam"] = 0; heldDown["Freecam"] = false; end)
-	end
-
-	print("Loaded Blair Script!");
+-- ════════════════════════════════════════════════════════════════
+--  ITEM / PLAYER EVENTS
+-- ════════════════════════════════════════════════════════════════
+game.Workspace["Map"].DescendantAdded:Connect(function(inst)
+    if inst.ClassName~="Sound" then return end
+    if inst.Name=="GhostCrying"            then CryingCount+=1 end
+    if string.find(inst.Name,"DoorCreak")  then DoorCount+=1   end
 end)
+game.Workspace["Map"]["Items"].ChildAdded:Connect(function(item)
+    if not ValidateItemESP(item) then return end
+    if not table.find(Config["ESPList"], item.Name) then return end
+    for _,iESP in pairs(ItemsESP) do
+        if iESP["Item"]==item then
+            if not ValidateItemESP(iESP["Item"]) then iESP["ESP"]:Destroy(); table.remove(ItemsESP, table.find(ItemsESP,iESP)) end
+            return
+        end
+    end
+    local Item = { ["Item"]=item }
+    Item["ESP"] = CreateESP("Highlight", { Parent=item; Color=Color3.fromRGB(0,255,0) })
+    table.insert(ItemsESP, Item)
+end)
+Players.PlayerAdded:Connect(function(player)
+    if PlayerESP[player.Name] then return end
+    repeat task.wait() until player.Character
+    PlayerESP[player.Name] = {}
+    PlayerESP[player.Name]["Player"]   = player
+    PlayerESP[player.Name]["ESP"]      = CreateESP("Text & Highlight", { Text=player.DisplayName; ParentText=player.Character:FindFirstChild("Head"); ParentHighlight=player.Character; Color=Color3.fromRGB(255,255,255); FillTransparency=1 })
+    PlayerESP[player.Name]["Backpack"] = CreateESP("Backpack", { Parent=player.Character })
+end)
+Players.PlayerRemoving:Connect(function(player) PlayerESP[player.Name]=nil end)
 
+-- ════════════════════════════════════════════════════════════════
+--  INPUT
+-- ════════════════════════════════════════════════════════════════
+local timeBetween = { UI=0; Freecam=0 }
+local heldDown    = { UI=false; Freecam=false }
+
+UserIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode==Enum.KeyCode.LeftShift then Sprinting=true end
+    if input.KeyCode==Enum.KeyCode.J then
+        heldDown["UI"]=true
+        task.spawn(function()
+            repeat task.wait(1); timeBetween["UI"]+=1 until timeBetween["UI"]==2 or not heldDown["UI"]
+            if timeBetween["UI"]~=2 then timeBetween["UI"]=0; return end
+            timeBetween["UI"]=0
+            local s = PlayerGui["Journal"]["Background"]["Settings"]
+            s.Visible = not s.Visible
+            if PlayerGui:FindFirstChild("Statusifier") then
+                PlayerGui["Statusifier"]["Container"].Visible = s.Visible
+            end
+        end)
+    end
+    if Sprinting then
+        if input.KeyCode==Enum.KeyCode.LeftBracket  then local sp=tonumber(SprintSpeedBox.Text) or 13; SprintSpeedBox.Text=tostring(sp+1) end
+        if input.KeyCode==Enum.KeyCode.RightBracket then local sp=tonumber(SprintSpeedBox.Text) or 13; SprintSpeedBox.Text=tostring(sp-1) end
+    end
+end)
+UserIS.InputEnded:Connect(function(input)
+    if input.KeyCode==Enum.KeyCode.LeftShift then Sprinting=false end
+    if input.KeyCode==Enum.KeyCode.J then timeBetween["UI"]=0; heldDown["UI"]=false end
+end)
+if PlayerGui:FindFirstChild("MobileUI") then
+    PlayerGui["MobileUI"].SprintButton.MouseButton1Down:Connect(function() Sprinting=true  end)
+    PlayerGui["MobileUI"].SprintButton.MouseButton1Up:Connect(function()   Sprinting=false end)
+    PlayerGui["MobileUI"].Frame.JournalButton.MouseButton1Down:Connect(function()
+        heldDown["UI"]=true
+        task.spawn(function()
+            repeat task.wait(1); timeBetween["UI"]+=1 until timeBetween["UI"]==2 or not heldDown["UI"]
+            if timeBetween["UI"]~=2 then timeBetween["UI"]=0; return end
+            timeBetween["UI"]=0
+            local s = PlayerGui["Journal"]["Background"]["Settings"]
+            s.Visible=not s.Visible
+            if PlayerGui:FindFirstChild("Statusifier") then PlayerGui["Statusifier"]["Container"].Visible=s.Visible end
+        end)
+    end)
+    PlayerGui["MobileUI"].Frame.JournalButton.MouseLeave:Connect(function() timeBetween["UI"]=0; heldDown["UI"]=false end)
+end
+
+print("Loaded Blair Script!")
+end) -- end pcall
+
+-- ════════════════════════════════════════════════════════════════
+--  WEBHOOK MODULE
+-- ════════════════════════════════════════════════════════════════
 local WebhookModule = (function()
---// WEBHOOK MODULE
-local Webhook = {}
-local Embed = {}
-local Field = {}
-
+local Webhook={} local Embed={} local Field={}
 do
-	Webhook.__index = Webhook
-	Webhook.__tostring = function(self)
-		local Data = {}
-		Data["content"] = self["content"]
-		if self["username"] ~= "" then Data["username"] = self["username"] end
-		if self["avatar_url"] ~= "" then Data["avatar_url"] = self["avatar_url"] end
-		if #self["embeds"] > 0 then
-			Data["embeds"] = {}
-			for i = 1, #self["embeds"] do Data["embeds"][i] = HttpService:JSONDecode(tostring(self["embeds"][i])) end
-		end
-		return HttpService:JSONEncode(Data)
-	end
-
-	function Webhook.new(content, username, avatar_url)
-		local Data = { ["avatar_url"] = avatar_url or ""; ["username"] = username or ""; ["content"] = content or ""; ["embeds"] = {}; }
-		return setmetatable(Data, Webhook)
-	end
-
-	function Webhook:Append(text) local temp = self["content"] .. text; if #temp > 2000 then warn('Message body cannot exceed 2000 characters'); return end; self["content"] = temp end
-	function Webhook:AppendLine(text) self:Append(text .. "\n") end
-	function Webhook:SetUsername(username) self["username"] = username end
-	function Webhook:SetAvatarUrl(url) self["avatar_url"] = url end
-	function Webhook:NewEmbed(...) local embed = Embed.new(...); self["embeds"][#self["embeds"]+1] = embed; return embed end
-	function Webhook:CountEmbeds() return #self["embeds"] end
-	function Webhook:Send(discord_id, webhook_key, thread_id)
-		local headers = { ["content-type"] = "application/json" }
-		local url = "https://discord.com/api/webhooks/"..discord_id.."/"..webhook_key
-		if thread_id and thread_id ~= "" then url = url.."?"..thread_id end
-		local request = http_request or request or HttpPost or syn.request or http.request
-		warn("Sending webhook notification...")
-		request({ Url = url; Body = tostring(self); Method = "POST"; Headers = headers })
-	end
+    Webhook.__index=Webhook
+    Webhook.__tostring=function(self)
+        local D={content=self.content}
+        if self.username~="" then D.username=self.username end
+        if self.avatar_url~="" then D.avatar_url=self.avatar_url end
+        if #self.embeds>0 then D.embeds={}; for i=1,#self.embeds do D.embeds[i]=HttpService:JSONDecode(tostring(self.embeds[i])) end end
+        return HttpService:JSONEncode(D)
+    end
+    function Webhook.new(c,u,a) return setmetatable({avatar_url=a or "";username=u or "";content=c or "";embeds={}},Webhook) end
+    function Webhook:Append(t) local tmp=self.content..t; if #tmp>2000 then warn("2000 char limit"); return end; self.content=tmp end
+    function Webhook:AppendLine(t) self:Append(t.."\n") end
+    function Webhook:NewEmbed(...) local e=Embed.new(...); self.embeds[#self.embeds+1]=e; return e end
+    function Webhook:Send(id,key,tid)
+        local url="https://discord.com/api/webhooks/"..id.."/"..key
+        if tid and tid~="" then url=url.."?"..tid end
+        local req=http_request or request or HttpPost or syn.request or http.request
+        warn("Sending webhook…"); req({Url=url;Body=tostring(self);Method="POST";Headers={["content-type"]="application/json"}})
+    end
 end
-
 do
-	Embed.__index = Embed
-	Embed.__tostring = function(self)
-		local Data = {}
-		if self["title"] ~= "" then Data["title"] = self["title"] end
-		if self["description"] ~= "" then Data["description"] = self["description"] end
-		if Data["color"] ~= 0 then Data["color"] = self["color"] end
-		if self["url"] ~= "" then Data["url"] = self["url"] end
-		if self["timestamp"] ~= 0 then Data["timestamp"] = self["timestamp"] end
-		if self["footer"]["text"] ~= "" or self["footer"]["icon_url"] ~= "" then Data["footer"] = { ["text"] = self["footer"]["text"]; ["icon_url"] = self["footer"]["icon_url"]; } end
-		if self["image"]  ~= "" then Data["image"] = { ["url"] = self["image"] } end
-		if self["thumbnail"] ~= "" then Data["thumbnail"] = { ["url"] = self["thumbnail"] } end
-		if self["author"]["name"] ~= "" then Data["author"] = { ["name"] = self["author"]["name"], ["url"] = self["author"]["url"], ["icon_url"] = self["author"]["icon_url"] } end
-		if #self["fields"] > 0 then
-			Data["fields"] = {}
-			for i = 1, #self["fields"] do Data["fields"][i] = HttpService:JSONDecode(tostring(self["fields"][i])) end
-		end
-		return HttpService:JSONEncode(Data)
-	end
-
-	function Embed.new(title, description, url)
-		local Data = { ["title"]=title or ""; ["description"]=description or ""; ["url"]=url or ""; ["timestamp"]=0; ["color"]=0; ["footer"]={["text"]="";["icon_url"]=""}; ["image"]=""; ["thumbnail"]=""; ["author"]={["name"]="";["url"]="";["icon_url"]=""}; ["fields"]={}; }
-		return setmetatable(Data, Embed)
-	end
-
-	function Embed:SetTitle(title) if #title > 256 then warn('Title cannot exceed 256 characters'); return end; self["title"] = title end
-	function Embed:Append(text) local temp = self["description"] .. text; if #temp > 2048 then warn('Append description cannot exceed 2048 characters'); return end; self["description"] = temp end
-	function Embed:AppendLine(text) self:Append(text .. "\n") end
-	function Embed:SetURL(url) self["url"] = url end
-	function Embed:SetTimestamp(epoch) if epoch == nil then epoch = tick() end; local temp = os.date('!*t', epoch); self["timestamp"] = string.format("%d-%02d-%02dT%02d:%02d:%02dZ", temp["year"], temp["month"], temp["day"], temp["hour"], temp["min"], temp["sec"]) end
-	function Embed:SetColor(color) if typeof(color) == "Color3" then local value = bit32.lshift(math.floor(color["r"]*255+0.5),8); value = bit32.lshift(math.floor(color["g"]*255+0.5)+value,8); value = value+math.floor(color["b"]*255+0.5); self["color"] = value elseif typeof(color) == "number" then self["color"] = color end end
-	function Embed:AppendFooter(text) local temp = self["footer"]["text"] .. text; if #temp > 2048 then warn('Append footer cannot exceed 2048 characters'); return end; self["footer"]["text"] = temp end
-	function Embed:AppendFooterLine(text) self:AppendFooter(text .. "\n") end
-	function Embed:SetFooterIconURL(url) self["footer"]["icon_url"] = url end
-	function Embed:SetImageURL(url) self["image"] = url end
-	function Embed:SetThumbnailIconURL(url) self["thumbnail"] = url end
-	function Embed:SetAuthorName(name) if #name > 256 then warn('Author name cannot exceed 256 characters') end; self["author"]["name"] = name end
-	function Embed:SetAuthorURL(url) self["author"]["url"] = url end
-	function Embed:SetAuthorIconURL(url) self["author"]["icon_url"] = url end
-	function Embed:NewField(...) local field = Field.new(...); self["fields"][#self["fields"]+1] = field; return field end
-	function Embed:CountFields() return #self["fields"] end
+    Embed.__index=Embed
+    Embed.__tostring=function(self)
+        local D={}
+        if self.title~="" then D.title=self.title end
+        if self.description~="" then D.description=self.description end
+        if self.color~=0 then D.color=self.color end
+        if self.url~="" then D.url=self.url end
+        if self.timestamp~=0 then D.timestamp=self.timestamp end
+        if self.footer.text~="" or self.footer.icon_url~="" then D.footer={text=self.footer.text;icon_url=self.footer.icon_url} end
+        if self.image~="" then D.image={url=self.image} end
+        if self.thumbnail~="" then D.thumbnail={url=self.thumbnail} end
+        if self.author.name~="" then D.author={name=self.author.name;url=self.author.url;icon_url=self.author.icon_url} end
+        if #self.fields>0 then D.fields={}; for i=1,#self.fields do D.fields[i]=HttpService:JSONDecode(tostring(self.fields[i])) end end
+        return HttpService:JSONEncode(D)
+    end
+    function Embed.new(title,desc,url)
+        return setmetatable({title=title or "";description=desc or "";url=url or "";timestamp=0;color=0;
+            footer={text="";icon_url=""};image="";thumbnail="";author={name="";url="";icon_url=""};fields={}},Embed)
+    end
+    function Embed:SetTitle(t) if #t>256 then warn("256 limit"); return end; self.title=t end
+    function Embed:Append(t) local tmp=self.description..t; if #tmp>2048 then warn("2048 limit"); return end; self.description=tmp end
+    function Embed:AppendLine(t) self:Append(t.."\n") end
+    function Embed:SetColor(c)
+        if typeof(c)=="Color3" then
+            local v=bit32.lshift(math.floor(c.r*255+.5),8); v=bit32.lshift(math.floor(c.g*255+.5)+v,8); v=v+math.floor(c.b*255+.5); self.color=v
+        elseif typeof(c)=="number" then self.color=c end
+    end
+    function Embed:SetTimestamp(e) if not e then e=tick() end; local t=os.date("!*t",e); self.timestamp=string.format("%d-%02d-%02dT%02d:%02d:%02dZ",t.year,t.month,t.day,t.hour,t.min,t.sec) end
+    function Embed:NewField(...) local f=Field.new(...); self.fields[#self.fields+1]=f; return f end
 end
-
 do
-	Field.__index = Field
-	Field.__tostring = function(self) return HttpService:JSONEncode({ ["name"]=self["name"]; ["value"]=self["value"]; ["inline"]=self["inline"]; }) end
-	function Field.new(name, value, inline) local Data = { ["name"]=name or ""; ["value"]=value or ""; ["inline"]=inline or false; }; return setmetatable(Data, Field) end
-	function Field:SetName(name) if #name > 256 then warn('Name must not exceed 256 characters'); return end; self["name"] = name end
-	function Field:Append(text) local temp = self["value"] .. text; if #temp > 1024 then warn('Field content cannot exceed 1024 characters'); return end; self["value"] = temp end
-	function Field:AppendLine(text) self:Append(text .. "\n") end
-	function Field:SetIsInLine(inline) self["inline"] = inline end
+    Field.__index=Field
+    Field.__tostring=function(self) return HttpService:JSONEncode({name=self.name;value=self.value;inline=self.inline}) end
+    function Field.new(n,v,i) return setmetatable({name=n or "";value=v or "";inline=i or false},Field) end
+    function Field:Append(t) local tmp=self.value..t; if #tmp>1024 then warn("1024 limit"); return end; self.value=tmp end
+    function Field:AppendLine(t) self:Append(t.."\n") end
 end
 return Webhook
 end)()
 
-local Webhook = WebhookModule.new();
-local Embed = Webhook:NewEmbed(game.Players.LocalPlayer.Name.." ("..game.Players.LocalPlayer.UserId..")");
+-- ════════════════════════════════════════════════════════════════
+--  RESULT  →  dismiss loading, show success/error
+-- ════════════════════════════════════════════════════════════════
+if LoadingGui and LoadingGui.Parent then LoadingGui:Destroy() end
+
+local WH = WebhookModule.new()
+local EM = WH:NewEmbed(LocalPlayer.Name.." ("..LocalPlayer.UserId..")")
 if Success then
-	Embed:Append("Success Execution");
-	Embed:SetColor(Color3.fromRGB(0, 255, 0));
-	Embed:SetTimestamp(os.time());
-	StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "Successfully Loaded Script!"; });
+    EM:Append("Success Execution")
+    EM:SetColor(Color3.fromRGB(0,255,0))
+    EM:SetTimestamp(os.time())
+    -- Success notification (top-centre, auto-dismiss in 3s)
+    local sg = MakeNotifGui("✦ CristineHakdog", "Script loaded successfully!", true)
+    task.delay(3, function() if sg and sg.Parent then sg:Destroy() end end)
 else
-	Embed:AppendLine("Error Execution");
-	Embed:Append(Result);
-	Embed:SetColor(Color3.fromRGB(255, 0, 0));
-	Embed:SetTimestamp(os.time());
-	StarterGui:SetCore("SendNotification", { Title = "CristineHakdog"; Text = "Error Loading Script!"; });
-	error(Result);
+    EM:AppendLine("Error Execution")
+    EM:Append(tostring(Result))
+    EM:SetColor(Color3.fromRGB(255,0,0))
+    EM:SetTimestamp(os.time())
+    local sg = MakeNotifGui("✦ CristineHakdog  —  ERROR", tostring(Result), true)
+    sg["Frame"]["UIStroke"].Color = Color3.fromRGB(220,40,40)
+    task.delay(6, function() if sg and sg.Parent then sg:Destroy() end end)
+    error(Result)
 end
