@@ -318,17 +318,22 @@ end)()
 	-- [[ CONFIG ]] --
 	------------------
 	local Config = {
+		["CustomLight"] = false;
+		["CustomLightRange"] = "60";
+		["CustomLightBrightness"] = "10";
 		
 		["CustomSprint"] = false;
 		["CustomSprintSpeed"] = "13";
 		
 		["Fullbright"] = false;
+		["FullbrightAmbient"] = "255";
 		
 		["NoClipDoor"] = false;
 		
 		["ESP"] = false;
 		["ESPList"] = {};
 		
+		["Freecam"] = false;
 		
 		["SideStatus"] = false;
 		["SideStatusScale"] = "1";
@@ -360,7 +365,7 @@ end)()
 					Parent = PlayerGui.Journal.Background;
 					AnchorPoint = Vector2.new(0, 1);
 					BackgroundTransparency = 1;
-					Size = UDim2.new(1, 0, 0.04, 0);
+					Size = UDim2.new(1, 0, 0.06, 0);
 					Utility:Instance("UIListLayout", {
 						Padding = UDim.new(0, 10);
 						FillDirection = Enum.FillDirection.Horizontal;
@@ -377,7 +382,7 @@ end)()
 				BackgroundColor3 = Color3.fromRGB(0,0);
 				BackgroundTransparency = 0.25;
 				BorderSizePixel = 0;
-				Size = UDim2.new(0.10, 0, 1, 0);
+				Size = UDim2.new(0.16, 0, 1, 0);
 				Text = "";
 				Utility:Instance("TextLabel", {
 					AnchorPoint = Vector2.new(0.5, 0.5);
@@ -1362,7 +1367,19 @@ return Freecam
 end)()
 	FreecamModule.IgnoreGUI = {"Radio", "Journal", "MobileUI", "Statusifier"}
 
-
+	local Light;
+	if LocalPlayer.Character:FindFirstChild("HumanoidRootPart"):FindFirstChild("SpotLight") then
+		Light = LocalPlayer.Character:FindFirstChild("HumanoidRootPart"):FindFirstChild("SpotLight")
+	else
+		Light = Utility:Instance("SpotLight", {
+			Parent = LocalPlayer.Character:FindFirstChild("HumanoidRootPart");
+			Brightness = 10;
+			Range = 60;
+			Face = Enum.NormalId.Front;
+			Angle = 120;
+			Shadows = false;
+		});
+	end
 
 	local Sprinting = false
 
@@ -1448,12 +1465,30 @@ end)()
 	--------------------------
 	-- [[ USER INTERFACE ]] --
 	--------------------------
+	local CustomLights = CreateSettings("Custom Lights", { Config = "CustomLight"; Keybind = Enum.KeyCode.R; }, {
+		On = function() Light.Enabled = true end;
+		Off = function() Light.Enabled = false end;
+	});
+	local CustomLightsRange = CustomLights:AddTextbox({
+		Position = UDim2.new(0.25, 0, 0, -2);
+		Size = UDim2.new(0.4, 0, 0.8, 0);
+		Text = "60";
+	}, { Config = "CustomLightRange"; Display = "Range"; Type = "Integer"; });
+	local CustomLightBrightness = CustomLights:AddTextbox({
+		Position = UDim2.new(0.75, 0, 0, -2);
+		Size = UDim2.new(0.4, 0, 0.8, 0);
+		Text = "10";
+	}, { Config = "CustomLightBrightness"; Display = "Brightness"; Type = "Integer"; });
+
 	local CustomSprint = CreateSettings("Custom Sprint", { Config = "CustomSprint"; });
 	local CustomSprintSpeed = CustomSprint:AddTextbox({ Text = "13"; }, { Config = "CustomSprintSpeed"; Display = "Speed"; Type = "Number"; });
 
+	local FullbrightAmbient;
 	local Fullbright = CreateSettings("Fullbright", { Config = "Fullbright"; Keybind = Enum.KeyCode.T; }, {
 		On = function()
-			Lighting.Ambient = Color3.fromRGB(255, 255, 255);
+			if FullbrightAmbient and FullbrightAmbient.Text ~= "" then Lighting.Ambient = Color3.fromRGB(tonumber(FullbrightAmbient.Text), tonumber(FullbrightAmbient.Text), tonumber(FullbrightAmbient.Text));
+			elseif Config["FullbrightAmbient"] then Lighting.Ambient = Color3.fromRGB(tonumber(Config["FullbrightAmbient"]), tonumber(Config["FullbrightAmbient"]), tonumber(Config["FullbrightAmbient"]));
+			else Lighting.Ambient = Color3.fromRGB(138, 138, 138); end
 			Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128);
 			Lighting.Brightness = 2;
 			Lighting["Atmosphere"].Density = 0
@@ -1463,6 +1498,7 @@ end)()
 			Lighting["Atmosphere"].Density = AtmosphereDensity
 		end;
 	});
+	FullbrightAmbient = Fullbright:AddTextbox({ Text = "138"; }, { Config = "FullbrightAmbient"; Display = "Ambient"; Type = "Integer"; });
 
 	local NoClipDoor = CreateSettings("No Clip Door", { Config = "NoClipDoor"; Keybind = Enum.KeyCode.X; }, {
 		On = function()
@@ -1477,7 +1513,7 @@ end)()
 		end;
 	});
 	
-	local List =  Utility:CombineTable({"Ghost","Ghost Room","BooBoo Doll","Generator","Players","Cursed Object","Backpack"}, Utility:GetTableKeys(BlairData["Items"]));
+	local List =  Utility:CombineTable({"Ghost","BooBoo Doll","Generator","Players","Cursed Object","Backpack"}, Utility:GetTableKeys(BlairData["Items"]));
 	local ESP = CreateSettings("ESP", { Config = "ESP"; });
 	local ESPList = ESP:AddDropdrown({}, {
 		Config = "ESPList";
@@ -1494,6 +1530,8 @@ end)()
 		end;
 	});
 	
+	local Freecam = CreateSettings("Freecam", { Config = "Freecam"; });
+
 	local SideStatus = CreateSettings("Side Status", { Config = "SideStatus"; }, {
 		On = function() PlayerGui["Statusifier"].Enabled = true; end;
 		Off = function() PlayerGui["Statusifier"].Enabled = false; end;
@@ -1570,14 +1608,14 @@ end)()
 	------------------
 	local Room = CreateInfo("Possible Room");
 	local RoomName = Room.AddInfo("Room Name");
-	local RoomTemp = Room.AddInfo("Room Temp");
+	local RoomTemp = Room.AddInfo("Temperature");
 	local RoomWater = Room.AddInfo("Water Running");
 	local RoomSalt = Room.AddInfo("Salt Stepped"); RoomSalt.Visible = false;
 	local RoomCrying = Room.AddInfo("Ghost Crying"); RoomCrying.Visible = false;
 	local RoomDoor = Room.AddInfo("Door Interact"); RoomDoor.Visible = false;
 	local RoomManifest = Room.AddInfo("Manifest"); RoomManifest.Visible = false;
 	local RoomThread = Utility:Thread("Room", function()
-		_G.CurrentRoomESP = nil;
+		local RoomESP = nil;
 		local CurrentHighlightedRoom = nil;
 		while task.wait() do
 			local LowestTempRoom = nil;
@@ -1597,11 +1635,11 @@ end)()
 				local tempDec = math.abs(tempInt) % 100;
 				local tempStr = tostring(tempWhole) .. "." .. (tempDec < 10 and "0" .. tostring(tempDec) or tostring(tempDec));
 				RoomName.Text = "Room: " .. LowestTempRoom.Name;
-				RoomTemp.Text = "Temp: " .. tempStr .. "°C";
+				RoomTemp.Text = "Temperature: " .. tempStr .. "°C";
 				LowestTemp = LowestTempRoom;
 
 				if CurrentHighlightedRoom ~= LowestTempRoom then
-					if _G.CurrentRoomESP then _G.CurrentRoomESP.Destroy(); end
+					if RoomESP then RoomESP.Destroy(); end
 					-- Destroy old beam attachments
 					pcall(function()
 						if LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0") then LocalPlayer.Character.HumanoidRootPart:FindFirstChild("RoomESP_Att0"):Destroy(); end
@@ -1609,7 +1647,7 @@ end)()
 						if game.Workspace:FindFirstChild("RoomESP_Beam") then game.Workspace:FindFirstChild("RoomESP_Beam"):Destroy(); end
 					end)
 					-- Floating label ESP
-					_G.CurrentRoomESP = CreateESP("Text", {
+					RoomESP = CreateESP("Text", {
 						Text = "[Ghost Room] " .. LowestTempRoom.Name;
 						Parent = LowestTempRoom;
 						Distance = LowestTempRoom;
@@ -1617,7 +1655,7 @@ end)()
 						Size = UDim2.new(8, 0, 2, 0);
 						StudsOffset = Vector3.new(0, 5, 0);
 					});
-					-- ESP thread controls enable/disable based on ESPList
+					RoomESP.Enable();
 					-- Beam line from player to ghost room
 					pcall(function()
 						local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart");
@@ -1649,9 +1687,9 @@ end)()
 					end)
 					CurrentHighlightedRoom = LowestTempRoom;
 				else
-					if _G.CurrentRoomESP and _G.CurrentRoomESP.ESP then
+					if RoomESP and RoomESP.ESP then
 						pcall(function()
-							_G.CurrentRoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name;
+							RoomESP.ESP["Title"].Text = "[Ghost Room] " .. LowestTempRoom.Name;
 						end)
 					end
 				end
@@ -1682,6 +1720,7 @@ end)()
 	local GhostBlink = Ghost.AddInfo("Blink");
 	local GhostDuration = Ghost.AddInfo("Duration");
 	local GhostDisruption = Ghost.AddInfo("Disrupting");
+	local GhostSalt = Ghost.AddInfo("Salt Disturbed"); GhostSalt.Visible = false;
 	local GhostBanshee = Ghost.AddInfo("Banshee Scream"); GhostBanshee.Visible = false;
 	local GhostFaejkur = Ghost.AddInfo("Faejkur Laugh"); GhostFaejkur.Visible = false;
 	local GhostYama = Ghost.AddInfo("Yama Roar"); GhostYama.Visible = false;
@@ -1716,6 +1755,11 @@ end)()
 					if Player.Character then FindParabolic(Player.Character); end
 				end
 				FindParabolic(game.Workspace["Map"]["Items"]);
+			end
+			if not GhostSalt.Visible then
+				for _, salt in pairs(game.Workspace["Map"]["Misc"]:GetChildren()) do
+					if salt.Name == "SaltStepped" then GhostSalt.Visible = true; GhostSalt.Text = "Salt Disturbed"; end
+				end
 			end
 		end
 	end):Start()
@@ -1854,10 +1898,13 @@ end)()
 	------------------
 	-- [[ EVENTS ]] --
 	------------------
-	local timeBetween = { ["UI"] = 0; }
-	local heldDown = { ["UI"] = false; }
+	local timeBetween = { ["UI"] = 0; ["Freecam"] = 0; }
+	local heldDown = { ["UI"] = false; ["Freecam"] = false; }
 	local UpdaterThread = Utility:Thread("Updater", function()
 		while task.wait() do
+			Light.Brightness = tonumber(CustomLightBrightness.Text) or 0;
+			Light.Range = tonumber(CustomLightsRange.Text) or 0;
+
 			if CustomSprint.Enabled and Sprinting then LocalPlayer.Character:FindFirstChild("Humanoid").WalkSpeed = tonumber(CustomSprintSpeed.Text) or 13; end
 			if PlayerGui:FindFirstChild("Statusifier") then PlayerGui["Statusifier"]["Container"]["UIScale"].Scale = tonumber(SideStatusScale.Text) or 1; end
 		end
@@ -1887,17 +1934,6 @@ end)()
 				if GhostESP["Highlight"] then GhostESP["Highlight"]:Disable(); end
 			end
 			if CursedObjectESP then if Config["ESP"] and table.find(Config["ESPList"], "Cursed Object") then CursedObjectESP:Enable(); else CursedObjectESP:Disable(); end end
-			-- Ghost Room ESP label + beam, both toggled by "Ghost Room" in ESP list
-			do
-				local ghostRoomOn = Config["ESP"] and table.find(Config["ESPList"], "Ghost Room")
-				if _G.CurrentRoomESP then
-					if ghostRoomOn then _G.CurrentRoomESP.Enable() else _G.CurrentRoomESP.Disable() end
-				end
-				pcall(function()
-					local beam = game.Workspace.Terrain:FindFirstChild("RoomESP_Beam")
-					if beam then beam.Enabled = ghostRoomOn and true or false end
-				end)
-			end
 			for _, pESP in pairs(PlayerESP) do
 				if pESP["Player"] == nil then continue; end
 				if Config["ESP"] and table.find(Config["ESPList"], "Players") then pESP["ESP"]:Enable(); else pESP["ESP"]:Disable(); end
@@ -1962,6 +1998,7 @@ end)()
 	UserIS.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then return end
 		if input.KeyCode == Enum.KeyCode.LeftShift then Sprinting = true; end
+		if input.KeyCode == Enum.KeyCode.M and Freecam.Enabled then FreecamModule.ToggleFreecam(); end
 		if input.KeyCode == Enum.KeyCode.J then
 			heldDown["UI"] = true
 			task.spawn(function()
@@ -1996,7 +2033,17 @@ end)()
 			end)
 		end)
 		PlayerGui["MobileUI"].Frame.JournalButton.MouseLeave:Connect(function() timeBetween["UI"] = 0; heldDown["UI"] = false; end)
-
+		PlayerGui["MobileUI"].FlashlightButton.MouseButton1Down:Connect(function()
+			if not Freecam.Enabled then return; end
+			heldDown["Freecam"] = true
+			task.spawn(function()
+				repeat task.wait(1); timeBetween["Freecam"] += 1; until timeBetween["Freecam"] == 2 or heldDown["Freecam"] == false;
+				if timeBetween["Freecam"] ~= 2 then timeBetween["Freecam"] = 0; return; end
+				timeBetween["Freecam"] = 0;
+				FreecamModule.ToggleFreecam()
+			end)
+		end)
+		PlayerGui["MobileUI"].FlashlightButton.MouseLeave:Connect(function() timeBetween["Freecam"] = 0; heldDown["Freecam"] = false; end)
 	end
 
 	print("Loaded Blair Script!");
