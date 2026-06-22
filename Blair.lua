@@ -1723,11 +1723,10 @@ end)()
 				end
 				FindParabolic(game.Workspace["Map"]["Items"]);
 			end
-		end
-		-- Salt check runs always, not just when ghost is present
-		if not GhostSalt.Visible then
-			for _, salt in pairs(game.Workspace["Map"]["Misc"]:GetChildren()) do
-				if salt.Name == "SaltStepped" then GhostSalt.Visible = true; GhostSalt.Text = "Salt Disturbed"; end
+			if not GhostSalt.Visible then
+				for _, salt in pairs(game.Workspace["Map"]["Misc"]:GetChildren()) do
+					if salt.Name == "SaltStepped" then GhostSalt.Visible = true; GhostSalt.Text = "Salt Disturbed"; end
+				end
 			end
 		end
 	end):Start()
